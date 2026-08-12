@@ -24,7 +24,6 @@ export default function FavoritesPage() {
 
   return (
     <div className="bg-[#121315] min-h-screen text-white">
-      <Header />
       <div className="container mx-auto px-6 py-6">
         <h1 className="text-xl md:text-2xl font-bold mb-6 text-sky-400 border-b border-gray-800 pb-3">
           Danh Sách Phim Yêu Thích ({favoriteMovies.length})

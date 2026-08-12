@@ -195,8 +195,6 @@ function WatchPage() {
 
   return (
     <div className="bg-[#121315] min-h-screen text-white">
-      <Header />
-
       <div className="container mx-auto px-6 py-4">
         {/* Breadcrumb */}
         <div className="text-xs text-gray-400 mb-4 flex items-center gap-2">

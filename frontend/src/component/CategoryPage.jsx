@@ -32,7 +32,6 @@ export default function CategoryPage() {
 
   return (
     <div className="bg-[#121316] min-h-screen text-white pb-12">
-      <Header />
       <main className="max-w-[1650px] mx-auto px-4 md:px-10 py-6">
         <div className="mb-6 border-b border-gray-800 pb-3 flex items-baseline justify-between">
           <h1 className="text-xl md:text-2xl font-bold text-gray-100 tracking-wide capitalize">
