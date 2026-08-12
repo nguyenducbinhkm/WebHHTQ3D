@@ -317,8 +317,8 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
               />
             </div>
 
-            {/* Hiển thị thời gian (tăng kích thước to rõ) */}
-            <span className="text-base font-mono font-medium text-gray-200 tracking-wide pl-2">
+            {/* Hiển thị thời gian đã được tinh chỉnh font chữ đẹp hơn */}
+            <span className="text-base font-sans font-semibold text-gray-200 tracking-wider pl-2 tabular-nums">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
