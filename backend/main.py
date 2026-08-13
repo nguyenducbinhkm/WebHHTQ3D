@@ -67,23 +67,44 @@ def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db
 
 @app.get("/api/movies")
 def get_movies(db: Session = Depends(get_db)):
-    query = text("""
+    # 1. Lấy danh sách tất cả phim kèm description và tính số tập
+    movies_query = text("""
         SELECT 
             m.id, 
             m.title, 
             m.slug, 
+            m.description, 
             m.poster_url, 
             m.backdrop_url, 
             m.status, 
             m.views_count,
-            m.total_ep,  -- <--- Phải có dòng này để đẩy total_ep từ DB ra ngoài API
+            m.total_ep,
             COUNT(e.id) AS current_ep
         FROM movies m
         LEFT JOIN episodes e ON m.id = e.movie_id
         GROUP BY m.id
         ORDER BY m.created_at DESC
     """)
-    return db.execute(query).mappings().all()
+    movies = db.execute(movies_query).mappings().all()
+
+    # 2. Duyệt qua từng phim để gắp thêm danh sách thể loại tương ứng từ bảng trung gian
+    result = []
+    for movie in movies:
+        movie_dict = dict(movie)
+        
+        cats_query = text("""
+            SELECT c.id, c.name, c.slug
+            FROM categories c
+            JOIN movie_categories mc ON c.id = mc.category_id
+            WHERE mc.movie_id = :movie_id
+        """)
+        categories = db.execute(cats_query, {"movie_id": movie_dict["id"]}).mappings().all()
+        
+        # Gắn mảng categories vào object phim
+        movie_dict["categories"] = [dict(cat) for cat in categories]
+        result.append(movie_dict)
+
+    return result
 
 # 4. API Lấy Top Phim Hot (Cho Bảng xếp hạng)
 @app.get("/api/movies/top-hot")
@@ -156,5 +177,5 @@ def get_movie_detail(slug: str, db: Session = Depends(get_db)):
     return {
         "movie_info": movie,
         "episodes": episodes,
-        "categories": categories  # Bổ sung thêm mảng thể loại vào đây để frontend nhận được
+        "categories": categories
     }

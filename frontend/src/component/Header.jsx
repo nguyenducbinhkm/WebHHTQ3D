@@ -8,16 +8,20 @@ import {
   FaSpinner,
   FaTimes,
   FaPlayCircle,
+  // Đã bỏ FaUser vì dùng ảnh thay thế
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Login from "./Login";
 
 const Header = () => {
   const [categories, setCategories] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // States cho tính năng Tìm kiếm
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -26,7 +30,6 @@ const Header = () => {
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // 1. Gọi API lấy danh sách Thể Loại từ Backend FastAPI
   useEffect(() => {
     axios
       .get("http://127.0.0.1:8000/api/categories")
@@ -37,7 +40,6 @@ const Header = () => {
       .catch((err) => console.error("Lỗi kết nối API Thể loại:", err));
   }, []);
 
-  // 2. Đóng menu thể loại khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -51,7 +53,6 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 3. Tự động tìm kiếm trực tiếp (Live Search + Debounce 300ms)
   useEffect(() => {
     const query = searchTerm.trim();
     if (!query) {
@@ -84,7 +85,6 @@ const Header = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // 4. Xử lý khi nhấn Submit Form
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -93,7 +93,6 @@ const Header = () => {
     }
   };
 
-  // Mảng các class màu sắc luân phiên cho thể loại phim
   const categoryColors = [
     "text-emerald-400 hover:text-emerald-300",
     "text-orange-400 hover:text-orange-300",
@@ -108,7 +107,7 @@ const Header = () => {
 
   return (
     <header className="bg-[#22252a] text-white px-5 py-2.5 flex items-center justify-between shadow-md relative z-50">
-      {/* Bên trái: Menu Icon (Dropdown Thể Loại) + Logo */}
+      {/* Bên trái: Menu Icon + Logo */}
       <div className="flex items-center space-x-3 relative" ref={menuRef}>
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -118,7 +117,6 @@ const Header = () => {
           <FaCaretDown className="text-xs text-gray-400" />
         </button>
 
-        {/* Dropdown danh sách Thể Loại từ DB */}
         {isMenuOpen && (
           <div className="absolute top-10 left-0 bg-[#1a1c20] border border-gray-700 rounded shadow-xl py-2 w-48 z-50 max-h-96 overflow-y-auto">
             <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase border-b border-gray-700 mb-1">
@@ -126,7 +124,6 @@ const Header = () => {
             </div>
             {categories.length > 0 ? (
               categories.map((cat, index) => {
-                // Lấy màu xoay vòng theo index
                 const colorClass =
                   categoryColors[index % categoryColors.length];
                 return (
@@ -146,7 +143,6 @@ const Header = () => {
           </div>
         )}
 
-        {/* Logo DUCBINH.ME */}
         <Link
           to="/"
           className="text-2xl font-black tracking-tight cursor-pointer select-none leading-none"
@@ -157,7 +153,7 @@ const Header = () => {
         </Link>
       </div>
 
-      {/* Ở giữa: Thanh tìm kiếm thông minh (Live Search) */}
+      {/* Ở giữa: Thanh tìm kiếm */}
       <div className="flex-1 max-w-[550px] mx-6 relative" ref={searchRef}>
         <form
           onSubmit={handleSearchSubmit}
@@ -172,7 +168,6 @@ const Header = () => {
             className="w-full text-gray-800 bg-transparent focus:outline-none text-sm placeholder-gray-400 pr-2"
           />
 
-          {/* Nút xóa từ khóa nếu đã nhập */}
           {searchTerm && (
             <button
               type="button"
@@ -194,7 +189,6 @@ const Header = () => {
           </div>
         </form>
 
-        {/* Dynamic Live Search Dropdown */}
         {showDropdown && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1c20] border border-gray-700 rounded-b shadow-2xl overflow-hidden z-50 max-h-[420px] overflow-y-auto">
             {isSearching ? (
@@ -247,9 +241,8 @@ const Header = () => {
         )}
       </div>
 
-      {/* Bên phải: Lịch sử, Yêu thích + Đăng nhập */}
+      {/* Bên phải: Lịch sử, Yêu thích + Khu vực tài khoản */}
       <div className="flex items-center space-x-4">
-        {/* Lịch sử xem */}
         <Link
           to="/lich-su"
           className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-1"
@@ -260,7 +253,6 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Phim yêu thích */}
         <Link
           to="/favorites"
           className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-1"
@@ -271,11 +263,34 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Nút Đăng Nhập */}
-        <button className="bg-gradient-to-r from-[#60a5fa] to-[#38bdf8] hover:opacity-90 text-white text-xs font-medium px-4 py-2 rounded-sm shadow-sm transition-all ml-2 whitespace-nowrap">
-          Đăng Nhập
-        </button>
+        {/* Hiển thị ảnh đại diện tròn khi đã đăng nhập */}
+        {isLoggedIn ? (
+          <div
+            className="w-9 h-9 ml-2 rounded-full overflow-hidden border-2 border-sky-400/80 cursor-pointer hover:opacity-90 transition shadow-md shrink-0"
+            title="Tài khoản của tôi"
+          >
+            <img
+              src="/avatar.png"
+              alt="User Avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsLoginOpen(true)}
+            className="bg-gradient-to-r from-[#60a5fa] to-[#38bdf8] hover:opacity-90 text-white text-xs font-medium px-4 py-2 rounded-sm shadow-sm transition-all ml-2 whitespace-nowrap"
+          >
+            Đăng Nhập
+          </button>
+        )}
       </div>
+
+      {/* Component Modal */}
+      <Login
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onLoginSuccess={() => setIsLoggedIn(true)}
+      />
     </header>
   );
 };
