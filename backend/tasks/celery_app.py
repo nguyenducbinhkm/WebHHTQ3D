@@ -1,3 +1,11 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Tự động tìm file .env nằm ở thư mục gốc (lùi 2 cấp từ tasks/celery_app.py ra thư mục Fullstack-Movie)
+env_path = Path(__file__).resolve().parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
 from celery import Celery
 
 celery_app = Celery(

@@ -375,7 +375,10 @@ function WatchPage() {
           </div>
         </div>
 
-        <Movielist title="PHIM HOẠT HÌNH ĐỀ CỬ KHÁC" data={allMovies} />
+        <Movielist
+          title="PHIM HOẠT HÌNH ĐỀ CỬ KHÁC"
+          data={allMovies.slice(0, 8)}
+        />
       </div>
     </div>
   );

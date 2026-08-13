@@ -5,18 +5,42 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const daysOfWeek = [
-  { key: "mon", label: "Thứ Hai", sub: "Mon" },
-  { key: "tue", label: "Thứ Ba", sub: "Tue" },
-  { key: "wed", label: "Thứ Tư", sub: "Wed" },
-  { key: "thu", label: "Thứ Năm", sub: "Thu" },
-  { key: "fri", label: "Thứ Sáu", sub: "Fri" },
-  { key: "sat", label: "Thứ Bảy", sub: "Sat" },
-  { key: "sun", label: "Chủ Nhật", sub: "Sun" },
+  { key: "mon", label: "Thứ Hai", sub: "Mon", jsDay: 1 },
+  { key: "tue", label: "Thứ Ba", sub: "Tue", jsDay: 2 },
+  { key: "wed", label: "Thứ Tư", sub: "Wed", jsDay: 3 },
+  { key: "thu", label: "Thứ Năm", sub: "Thu", jsDay: 4 },
+  { key: "fri", label: "Thứ Sáu", sub: "Fri", jsDay: 5 },
+  { key: "sat", label: "Thứ Bảy", sub: "Sat", jsDay: 6 },
+  { key: "sun", label: "Chủ Nhật", sub: "Sun", jsDay: 0 },
 ];
 
 export default function ScheduleSection() {
-  const [activeDay, setActiveDay] = useState("tue");
+  // Hàm xác định key của ngày hôm nay theo hệ thống
+  const getTodayKey = () => {
+    const todayIndex = new Date().getDay(); // 0: Chủ Nhật, 1: Thứ Hai,...
+    const current = daysOfWeek.find((d) => d.jsDay === todayIndex);
+    return current ? current.key : "mon";
+  };
+
+  const [activeDay, setActiveDay] = useState(getTodayKey);
   const [movies, setMovies] = useState([]);
+  const [todayString, setTodayString] = useState("");
+
+  // Tự động tạo chuỗi hiển thị ngày tháng năm hiện tại (Ví dụ: Thứ Sáu, ngày 14/08/2026)
+  useEffect(() => {
+    const now = new Date();
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Ho_Chi_Minh",
+    };
+
+    // Format tiếng Việt chuẩn
+    const formatter = new Intl.DateTimeFormat("vi-VN", options);
+    setTodayString(formatter.format(now));
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -25,7 +49,6 @@ export default function ScheduleSection() {
       .get(`${API_URL}/api/movies/schedule/${activeDay}`)
       .then((res) => {
         if (!isMounted) return;
-        // Xử lý an toàn giống như bên banner bạn vừa gửi
         const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setMovies(data);
       })
@@ -46,8 +69,8 @@ export default function ScheduleSection() {
         <h2 className="text-2xl font-bold text-yellow-500 tracking-wide">
           Lịch Phim
         </h2>
-        <div className="bg-[#2d2342] text-purple-200 px-4 py-1.5 rounded-full text-sm font-medium border border-purple-500/30">
-          Hôm nay: Thứ Ba, ngày 11/08/2026
+        <div className="bg-[#2d2342] text-purple-200 px-4 py-1.5 rounded-full text-sm font-medium border border-purple-500/30 capitalize">
+          Hôm nay: {todayString || "Đang cập nhật..."}
         </div>
       </div>
 

@@ -14,7 +14,6 @@ from routers import admin_movies
 app = FastAPI(title="Movie 3D Donghua API")
 
 # Cấu hình CORS linh hoạt cho cả Local và Production (Vercel)
-# Có thể ghi đè bằng biến môi trường ALLOWED_ORIGINS trên Render
 DEFAULT_ORIGINS = "https://web-hhtq-3-d.vercel.app,http://localhost:5173,http://localhost:3000"
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", DEFAULT_ORIGINS)
 origins = [origin.strip() for origin in allowed_origins_env.split(",")]
@@ -67,42 +66,6 @@ def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db
 # ==================== PHIM (MOVIES) ====================
 # QUAN TRỌNG: Các route tĩnh (top-hot, schedule, search) PHẢI ĐẶT TRƯỚC route động /{slug}
 
-@app.get("/api/movies")
-def get_movies(db: Session = Depends(get_db)):
-    movies_query = text("""
-        SELECT 
-            m.id, 
-            m.title, 
-            m.slug, 
-            m.description, 
-            m.poster_url, 
-            m.backdrop_url, 
-            m.status, 
-            m.views_count,
-            m.total_ep,
-            (SELECT COUNT(*) FROM episodes e WHERE e.movie_id = m.id) AS current_ep
-        FROM movies m
-        ORDER BY m.created_at DESC
-    """)
-    movies = db.execute(movies_query).mappings().all()
-
-    result = []
-    for movie in movies:
-        movie_dict = dict(movie)
-        
-        cats_query = text("""
-            SELECT c.id, c.name, c.slug
-            FROM categories c
-            JOIN movie_categories mc ON c.id = mc.category_id
-            WHERE mc.movie_id = :movie_id
-        """)
-        categories = db.execute(cats_query, {"movie_id": movie_dict["id"]}).mappings().all()
-        
-        movie_dict["categories"] = [dict(cat) for cat in categories]
-        result.append(movie_dict)
-
-    return result
-
 # 1. API Lấy Top Phim Hot
 @app.get("/api/movies/top-hot")
 def get_top_hot_movies(db: Session = Depends(get_db)):
@@ -141,7 +104,44 @@ def search_movies(q: str = Query("", description="Từ khóa tìm kiếm"), db: 
     """)
     return db.execute(query, {"q": search_pattern}).mappings().all()
 
-# 4. API Lấy chi tiết 1 bộ phim theo slug (ĐẶT CUỐI CÙNG trong nhóm movies để tránh nuốt các route trên)
+# 4. API Lấy danh sách tất cả phim
+@app.get("/api/movies")
+def get_movies(db: Session = Depends(get_db)):
+    movies_query = text("""
+        SELECT 
+            m.id, 
+            m.title, 
+            m.slug, 
+            m.description, 
+            m.poster_url, 
+            m.backdrop_url, 
+            m.status, 
+            m.views_count,
+            m.total_ep,
+            (SELECT COUNT(*) FROM episodes e WHERE e.movie_id = m.id) AS current_ep
+        FROM movies m
+        ORDER BY m.created_at DESC
+    """)
+    movies = db.execute(movies_query).mappings().all()
+
+    result = []
+    for movie in movies:
+        movie_dict = dict(movie)
+        
+        cats_query = text("""
+            SELECT c.id, c.name, c.slug
+            FROM categories c
+            JOIN movie_categories mc ON c.id = mc.category_id
+            WHERE mc.movie_id = :movie_id
+        """)
+        categories = db.execute(cats_query, {"movie_id": movie_dict["id"]}).mappings().all()
+        
+        movie_dict["categories"] = [dict(cat) for cat in categories]
+        result.append(movie_dict)
+
+    return result
+
+# 5. API Lấy chi tiết 1 bộ phim theo slug (ĐẶT Ở CUỐI CÙNG)
 @app.get("/api/movies/{slug}")
 def get_movie_detail(slug: str, db: Session = Depends(get_db)):
     movie_query = text("""

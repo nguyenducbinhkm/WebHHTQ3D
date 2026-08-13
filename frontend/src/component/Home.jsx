@@ -5,6 +5,7 @@ import Movielist from "./Movielist";
 import RankingBoard from "./RankingBoard";
 import VideoPlayer from "./VideoPlayer";
 import ScheduleSection from "./ScheduleSection";
+import Pagination from "./Pagination"; // Nhập component phân trang vừa tạo
 
 // Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
@@ -13,6 +14,10 @@ function Home() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentVideo, setCurrentVideo] = useState(null);
+
+  // State phục vụ phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 16; // Giới hạn 16 phim mỗi trang
 
   useEffect(() => {
     axios
@@ -27,6 +32,12 @@ function Home() {
         setLoading(false);
       });
   }, []);
+
+  // Tính toán cắt mảng lấy 16 phim cho trang hiện tại
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentMovies = movies.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(movies.length / itemsPerPage);
 
   const handlePlayKiemLai = () => {
     setCurrentVideo({
@@ -50,7 +61,23 @@ function Home() {
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Cột trái */}
               <div className="flex-1 w-full min-w-0">
-                <Movielist title="HOẠT HÌNH 3D MỚI CẬP NHẬT" data={movies} />
+                {/* Chỉ truyền 16 phim của trang hiện tại vào Movielist */}
+                <Movielist
+                  title="HOẠT HÌNH 3D MỚI CẬP NHẬT"
+                  data={currentMovies}
+                />
+
+                {/* Thanh chuyển trang hiển thị ngay bên dưới danh sách phim */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => {
+                      setCurrentPage(page);
+                      window.scrollTo({ top: 400, behavior: "smooth" }); // Cuộn nhẹ lên khu vực danh sách khi đổi trang
+                    }}
+                  />
+                )}
               </div>
 
               {/* Cột phải: Bảng xếp hạng */}
