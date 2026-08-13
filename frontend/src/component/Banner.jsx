@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { FaStar, FaStarHalfAlt, FaPlay, FaHeart, FaInfo } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, EffectFade } from "swiper/modules";
 
-// Import CSS của Swiper
+// Swiper CSS
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 
-// Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Banner = () => {
@@ -18,7 +17,11 @@ const Banner = () => {
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
 
-  // Hàm helper để gán màu sắc đẹp mắt cho từng thể loại phim
+  // Main banner refs + active index
+  const mainSwiperRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Lấy màu badge theo thể loại
   const getCategoryColor = (name) => {
     const lowerName = name ? name.toLowerCase() : "";
     if (lowerName.includes("cổ trang") || lowerName.includes("hiện đại")) {
@@ -40,13 +43,13 @@ const Banner = () => {
     if (lowerName.includes("trùng sinh")) {
       return "text-purple-400 border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20";
     }
-    // Mặc định cho các thể loại khác
     return "text-sky-400 border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20";
   };
 
-  // Fetch danh sách phim và load danh sách yêu thích từ localStorage
+  // Fetch data
   useEffect(() => {
     let isMounted = true;
+
     axios
       .get(`${API_URL}/api/movies`)
       .then((res) => {
@@ -66,24 +69,47 @@ const Banner = () => {
     };
   }, []);
 
-  // Hàm xử lý Thêm/Xóa yêu thích
+  // Chỉ hiển thị đúng 5 ảnh
+  const displayMovies = useMemo(() => movies.slice(0, 5), [movies]);
+  const total = displayMovies.length;
+
+  // tránh % âm
+  const norm = (n, m) => ((n % m) + m) % m;
+
+  // Vị trí tương đối quanh ảnh active: -2, -1, 0, 1, 2
+  const getPos = (idx, active, len) => {
+    if (len <= 1) return 0;
+    const d = norm(idx - active, len);
+    if (d === 0) return 0;
+    if (d === 1) return 1;
+    if (d === 2) return 2;
+    if (d === len - 1) return -1;
+    return -2;
+  };
+
   const toggleFavorite = (movie, e) => {
     e.preventDefault();
-    let updatedFavorites;
+
     const isExist = favorites.some(
       (fav) => (fav.id || fav.slug) === (movie.id || movie.slug),
     );
 
-    if (isExist) {
-      updatedFavorites = favorites.filter(
-        (fav) => (fav.id || fav.slug) !== (movie.id || movie.slug),
-      );
-    } else {
-      updatedFavorites = [...favorites, movie];
-    }
+    const updatedFavorites = isExist
+      ? favorites.filter(
+          (fav) => (fav.id || fav.slug) !== (movie.id || movie.slug),
+        )
+      : [...favorites, movie];
 
     setFavorites(updatedFavorites);
     localStorage.setItem("favorite_movies", JSON.stringify(updatedFavorites));
+  };
+
+  // Click thumb -> nhảy về giữa + sync main
+  const handleThumbClick = (idx) => {
+    setActiveIndex(idx);
+    if (mainSwiperRef.current) {
+      mainSwiperRef.current.slideToLoop(idx, 900);
+    }
   };
 
   if (loading) {
@@ -94,26 +120,31 @@ const Banner = () => {
     );
   }
 
+  if (!total) return null;
+
   return (
-    <div className="relative w-full h-[calc(100vh-56px)] min-h-[600px] bg-[#0b0c0e] overflow-hidden text-white select-none banner-swiper-container">
+    <div className="relative w-full h-[calc(100vh-56px)] min-h-[600px] bg-[#0b0c0e] overflow-hidden text-white select-none banner-swiper-container flex flex-col justify-between">
+      {/* SWIPER CHÍNH */}
       <Swiper
         modules={[Autoplay, Pagination, EffectFade]}
-        effect={"fade"}
+        effect="fade"
         fadeEffect={{ crossFade: true }}
-        spaceBetween={0}
         slidesPerView={1}
-        autoplay={{
-          delay: 5000,
-          disableOnInteraction: false,
-        }}
+        loop={true}
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
         pagination={{
           clickable: true,
           el: ".custom-swiper-pagination",
         }}
         speed={1000}
-        className="w-full h-full"
+        onSwiper={(sw) => (mainSwiperRef.current = sw)}
+        onSlideChange={(sw) => {
+          const real = sw.realIndex % total;
+          setActiveIndex(real);
+        }}
+        className="w-full h-full absolute inset-0"
       >
-        {movies.map((movie, currentIndex) => {
+        {displayMovies.map((movie, currentIndex) => {
           const {
             title = "PHIM HOẠT HÌNH 3D",
             english_title,
@@ -133,7 +164,6 @@ const Banner = () => {
           const backdropUrl = backdrop_url || poster_url || "/banner.png";
           const posterUrl = poster_url || backdropUrl;
 
-          // Logic xử lý hiển thị số tập chuẩn
           let episodeLabel = "Tập mới";
           if (status === "trailer") {
             episodeLabel = "Trailer";
@@ -143,7 +173,6 @@ const Banner = () => {
             episodeLabel = `Tập ${current_ep}`;
           }
 
-          // Xử lý danh sách thể loại linh hoạt
           const rawCategories = categories || genres || [];
           const categoriesList = Array.isArray(rawCategories)
             ? rawCategories
@@ -160,7 +189,7 @@ const Banner = () => {
               key={movie.id || currentIndex}
               className="relative w-full h-full"
             >
-              {/* Phông nền Backdrop */}
+              {/* Backdrop */}
               <div
                 className="absolute inset-0 bg-cover bg-center scale-105"
                 style={{ backgroundImage: `url('${backdropUrl}')` }}
@@ -169,8 +198,8 @@ const Banner = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c0e] via-transparent to-transparent" />
               </div>
 
-              {/* Nội dung Banner */}
-              <div className="relative max-w-[1650px] mx-auto h-full px-6 md:px-12 flex items-center justify-between z-10 pb-12">
+              {/* Content */}
+              <div className="relative max-w-[1650px] mx-auto h-full px-6 md:px-12 flex items-center justify-between z-10 pb-20">
                 <div className="max-w-2xl space-y-5">
                   <div>
                     <h1
@@ -190,7 +219,6 @@ const Banner = () => {
                     )}
                   </div>
 
-                  {/* Đánh giá sao */}
                   <div className="flex items-center space-x-1.5 text-amber-400 text-xl">
                     <FaStar />
                     <FaStar />
@@ -199,7 +227,6 @@ const Banner = () => {
                     <FaStarHalfAlt />
                   </div>
 
-                  {/* Badges thông tin */}
                   <div className="flex flex-wrap items-center gap-2.5 pt-1">
                     <span className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded shadow-md">
                       {episodeLabel}
@@ -212,7 +239,6 @@ const Banner = () => {
                     </span>
                   </div>
 
-                  {/* Thể loại phim có màu sắc riêng và chuyển hướng sang CategoryPage */}
                   <div className="flex flex-wrap gap-2.5 pt-1">
                     {categoriesList.length > 0 ? (
                       categoriesList.map((item, idx) => {
@@ -228,7 +254,6 @@ const Banner = () => {
                           typeof catName === "string"
                             ? catName.trim()
                             : catName;
-
                         const colorClass = getCategoryColor(displayTitle);
 
                         return (
@@ -248,12 +273,10 @@ const Banner = () => {
                     )}
                   </div>
 
-                  {/* Mô tả chuẩn từ DB */}
                   <p className="text-gray-300 text-sm md:text-base leading-relaxed line-clamp-4 max-w-xl opacity-90">
                     {description}
                   </p>
 
-                  {/* Nút hành động */}
                   <div className="flex items-center gap-5 pt-3">
                     <Link
                       to={`/watch/${slug}`}
@@ -289,7 +312,6 @@ const Banner = () => {
                   </div>
                 </div>
 
-                {/* Poster đứng bên phải */}
                 <div className="hidden lg:block w-[320px] h-[450px] xl:w-[350px] xl:h-[490px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 shrink-0">
                   <img
                     src={posterUrl}
@@ -303,8 +325,35 @@ const Banner = () => {
         })}
       </Swiper>
 
-      {/* Thanh Pagination vạch đỏ */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2.5 z-20 custom-swiper-pagination"></div>
+      {/* THUMBNAIL STACKED 5 ẢNH - DỊCH TRÁI NHẸ ĐỂ TRÁNH CHẠM POSTER */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 hidden md:block w-full pointer-events-none">
+        <div className="thumb-stage pointer-events-auto mx-auto">
+          {displayMovies.map((movie, idx) => {
+            const pos = getPos(idx, activeIndex, total); // -2,-1,0,1,2
+            const thumbImg =
+              movie.backdrop_url || movie.poster_url || "/banner.png";
+
+            return (
+              <button
+                key={movie.id || idx}
+                type="button"
+                onClick={() => handleThumbClick(idx)}
+                className={`thumb-layer thumb-pos-${pos} ${pos === 0 ? "is-active" : ""}`}
+                aria-label={`Chọn phim ${movie.title || idx + 1}`}
+              >
+                <img
+                  src={thumbImg}
+                  alt={movie.title || "thumbnail"}
+                  className="thumb-img"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Pagination cho mobile */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2.5 z-20 custom-swiper-pagination md:hidden"></div>
 
       <style>{`
         .custom-swiper-pagination .swiper-pagination-bullet {
@@ -319,6 +368,139 @@ const Banner = () => {
         .custom-swiper-pagination .swiper-pagination-bullet-active {
           width: 40px;
           background-color: #dc2626 !important;
+        }
+
+        /* ====== STACKED THUMB STAGE ====== */
+        .thumb-stage {
+          position: relative;
+          width: 660px;
+          max-width: 66vw;
+          height: 110px;
+        }
+
+        .thumb-layer {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 210px;
+          height: 86px;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 2px solid transparent;
+          background: rgba(0, 0, 0, 0.45);
+          transform-origin: center center;
+          transition:
+            transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 420ms ease,
+            filter 420ms ease,
+            box-shadow 420ms ease,
+            border-color 420ms ease;
+          cursor: pointer;
+          will-change: transform, opacity;
+        }
+
+        .thumb-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* Ảnh giữa */
+        .thumb-pos-0 {
+          transform: translate(-50%, -50%) translateX(0) scale(1);
+          opacity: 1;
+          filter: brightness(1);
+          z-index: 50;
+        }
+
+        /* Viền vàng sáng + đổ bóng */
+        .thumb-pos-0.is-active {
+          border-color: #fbbf24;
+          box-shadow:
+            0 0 0 1px rgba(251, 191, 36, 0.95),
+            0 0 12px rgba(251, 191, 36, 0.85),
+            0 0 26px rgba(245, 158, 11, 0.65),
+            0 16px 34px rgba(0, 0, 0, 0.62);
+        }
+
+        /* 2 ảnh cạnh */
+        .thumb-pos--1 {
+          transform: translate(-50%, -50%) translateX(-125px) scale(0.68);
+          opacity: 0.78;
+          filter: brightness(0.72);
+          z-index: 30;
+        }
+
+        .thumb-pos-1 {
+          transform: translate(-50%, -50%) translateX(125px) scale(0.68);
+          opacity: 0.78;
+          filter: brightness(0.72);
+          z-index: 30;
+        }
+
+        /* 2 ảnh ngoài cùng */
+        .thumb-pos--2 {
+          transform: translate(-50%, -50%) translateX(-205px) scale(0.5);
+          opacity: 0.45;
+          filter: brightness(0.55);
+          z-index: 10;
+        }
+
+        .thumb-pos-2 {
+          transform: translate(-50%, -50%) translateX(205px) scale(0.5);
+          opacity: 0.45;
+          filter: brightness(0.55);
+          z-index: 10;
+        }
+
+        /* Responsive */
+        @media (max-width: 1280px) {
+          .thumb-stage {
+            width: 620px;
+            max-width: 70vw;
+            height: 104px;
+          }
+          .thumb-layer {
+            width: 190px;
+            height: 78px;
+          }
+          .thumb-pos--1 {
+            transform: translate(-50%, -50%) translateX(-112px) scale(0.68);
+          }
+          .thumb-pos-1 {
+            transform: translate(-50%, -50%) translateX(112px) scale(0.68);
+          }
+          .thumb-pos--2 {
+            transform: translate(-50%, -50%) translateX(-182px) scale(0.5);
+          }
+          .thumb-pos-2 {
+            transform: translate(-50%, -50%) translateX(182px) scale(0.5);
+          }
+        }
+
+        @media (max-width: 900px) {
+          .thumb-stage {
+            width: 560px;
+            max-width: 78vw;
+            height: 96px;
+          }
+          .thumb-layer {
+            width: 170px;
+            height: 70px;
+          }
+          .thumb-pos--1 {
+            transform: translate(-50%, -50%) translateX(-98px) scale(0.66);
+          }
+          .thumb-pos-1 {
+            transform: translate(-50%, -50%) translateX(98px) scale(0.66);
+          }
+          .thumb-pos--2 {
+            transform: translate(-50%, -50%) translateX(-158px) scale(0.48);
+          }
+          .thumb-pos-2 {
+            transform: translate(-50%, -50%) translateX(158px) scale(0.48);
+          }
         }
       `}</style>
     </div>
