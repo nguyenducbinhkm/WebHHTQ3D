@@ -84,7 +84,7 @@ def get_movies(db: Session = Depends(get_db)):
             COUNT(e.id) AS current_ep
         FROM movies m
         LEFT JOIN episodes e ON m.id = e.movie_id
-        GROUP BY m.id
+        GROUP BY m.id, m.created_at
         ORDER BY m.created_at DESC
     """)
     movies = db.execute(movies_query).mappings().all()
