@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
-import Header from "./Header";
+// Không cần import Header ở đây nữa nếu layout tổng đã có
 import { FaPlay, FaFrown } from "react-icons/fa";
 
 // Lấy base URL từ biến môi trường của Vite
@@ -15,12 +15,10 @@ export default function CategoryPage() {
 
   useEffect(() => {
     setLoading(true);
-    // Gọi đúng endpoint đã khai báo trong backend thông qua VITE_API_URL
     axios
       .get(`${API_URL}/api/categories/${slug}`)
       .then((res) => {
         const data = res.data;
-        // Backend trả về dạng { id, name, slug, movies: [...] }
         setMovies(data.movies || []);
         setCategoryName(data.name || slug);
         setLoading(false);
@@ -35,7 +33,7 @@ export default function CategoryPage() {
 
   return (
     <div className="bg-[#121316] min-h-screen text-white pb-12">
-      <Header />
+      {/* Đã xóa <Header /> thừa ở đây */}
       <main className="max-w-[1650px] mx-auto px-4 md:px-10 py-6">
         <div className="mb-6 border-b border-gray-800 pb-3 flex items-baseline justify-between">
           <h1 className="text-xl md:text-2xl font-bold text-gray-100 tracking-wide capitalize">
