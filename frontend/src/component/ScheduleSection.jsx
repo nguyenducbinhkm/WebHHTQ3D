@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 const daysOfWeek = [
   { key: "mon", label: "Thứ Hai", sub: "Mon" },
   { key: "tue", label: "Thứ Ba", sub: "Tue" },
@@ -16,16 +19,29 @@ export default function ScheduleSection() {
   const [movies, setMovies] = useState([]);
 
   useEffect(() => {
-    // Gọi API lấy danh sách phim theo ngày từ Backend FastAPI của bạn
+    let isMounted = true;
+
     axios
-      .get(`http://localhost:8000/api/movies/schedule/${activeDay}`)
-      .then((res) => setMovies(res.data))
-      .catch((err) => console.error("Lỗi lấy lịch phim:", err));
+      .get(`${API_URL}/api/movies/schedule/${activeDay}`)
+      .then((res) => {
+        if (!isMounted) return;
+        // Xử lý an toàn giống như bên banner bạn vừa gửi
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setMovies(data);
+      })
+      .catch((err) => {
+        console.error("Lỗi lấy lịch phim:", err);
+        if (isMounted) setMovies([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [activeDay]);
 
   return (
     <div className="bg-[#0b0f19] text-white p-6 my-6 rounded-2xl max-w-7xl mx-auto">
-      {/* Header Lịch Phim & Ngày tháng hiện tại */}
+      {/* Header Lịch Phim */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <h2 className="text-2xl font-bold text-yellow-500 tracking-wide">
           Lịch Phim
@@ -35,7 +51,7 @@ export default function ScheduleSection() {
         </div>
       </div>
 
-      {/* Thanh chọn các ngày trong tuần */}
+      {/* Thanh chọn ngày */}
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
         {daysOfWeek.map((day) => {
           const isActive = activeDay === day.key;
@@ -69,13 +85,13 @@ export default function ScheduleSection() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {movies.map((m) => (
             <a
-              key={m.id}
+              key={m.id || m.slug}
               href={`/watch/${m.slug}`}
               className="group bg-[#151c2d] rounded-2xl overflow-hidden border border-gray-800 hover:border-sky-500/50 transition-all duration-300 shadow-lg flex flex-col"
             >
               <div className="relative aspect-[3/4] overflow-hidden bg-gray-900">
                 <img
-                  src={m.poster_url}
+                  src={m.poster_url || m.backdrop_url}
                   alt={m.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
