@@ -13,17 +13,23 @@ from routers import admin_movies
 
 app = FastAPI(title="Movie 3D Donghua API")
 
-# Chỉ include router admin_movies, phần categories xử lý trực tiếp ở dưới
-app.include_router(admin_movies.router)
+# Cấu hình CORS để Frontend (Vercel) gọi API không bị chặn
+origins = [
+    "https://web-hhtq-3-d.vercel.app",  # Domain Vercel của bạn
+    "http://localhost:5173",             # Chạy local (Vite)
+    "http://localhost:3000",
+]
 
-# Cấu hình CORS để Frontend gọi API không bị chặn
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Chỉ include router admin_movies
+app.include_router(admin_movies.router)
 
 @app.get("/")
 def home():
@@ -31,23 +37,19 @@ def home():
 
 # ==================== THỂ LOẠI (CATEGORIES) ====================
 
-# 1. API Lấy danh sách tất cả thể loại (Cho Menu/Header)
 @app.get("/api/categories")
 def get_categories(db: Session = Depends(get_db)):
     query = text("SELECT id, name, slug FROM categories")
     return db.execute(query).mappings().all()
 
-# 2. API Lấy chi tiết thể loại và danh sách phim thuộc thể loại đó (Phục vụ trang CategoryPage)
 @app.get("/api/categories/{category_slug}")
 def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db)):
-    # 1. Tìm thể loại dựa vào slug
     cat_query = text("SELECT id, name, slug FROM categories WHERE slug = :slug")
     category = db.execute(cat_query, {"slug": category_slug}).mappings().first()
     
     if not category:
         raise HTTPException(status_code=404, detail="Không tìm thấy thể loại này!")
     
-    # 2. Lấy danh sách phim thông qua bảng trung gian movie_categories
     movies_query = text("""
         SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.status, m.views_count
         FROM movies m
@@ -64,10 +66,10 @@ def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db
     }
 
 # ==================== PHIM (MOVIES) ====================
+# QUAN TRỌNG: Các route tĩnh (top-hot, schedule, search) PHẢI ĐẶT TRƯỚC route động /{slug}
 
 @app.get("/api/movies")
 def get_movies(db: Session = Depends(get_db)):
-    # 1. Lấy danh sách tất cả phim kèm description và tính số tập
     movies_query = text("""
         SELECT 
             m.id, 
@@ -87,7 +89,6 @@ def get_movies(db: Session = Depends(get_db)):
     """)
     movies = db.execute(movies_query).mappings().all()
 
-    # 2. Duyệt qua từng phim để gắp thêm danh sách thể loại tương ứng từ bảng trung gian
     result = []
     for movie in movies:
         movie_dict = dict(movie)
@@ -100,13 +101,12 @@ def get_movies(db: Session = Depends(get_db)):
         """)
         categories = db.execute(cats_query, {"movie_id": movie_dict["id"]}).mappings().all()
         
-        # Gắn mảng categories vào object phim
         movie_dict["categories"] = [dict(cat) for cat in categories]
         result.append(movie_dict)
 
     return result
 
-# 4. API Lấy Top Phim Hot (Cho Bảng xếp hạng)
+# 1. API Lấy Top Phim Hot
 @app.get("/api/movies/top-hot")
 def get_top_hot_movies(db: Session = Depends(get_db)):
     query = text("""
@@ -117,7 +117,7 @@ def get_top_hot_movies(db: Session = Depends(get_db)):
     """)
     return db.execute(query).mappings().all()
 
-# 5. API Lấy danh sách phim theo lịch phát sóng (Phục vụ Component Lịch Phim)
+# 2. API Lấy danh sách phim theo lịch phát sóng
 @app.get("/api/movies/schedule/{day}")
 def get_movies_by_schedule(day: str, db: Session = Depends(get_db)):
     query = text("""
@@ -127,7 +127,7 @@ def get_movies_by_schedule(day: str, db: Session = Depends(get_db)):
     """)
     return db.execute(query, {"day": day}).mappings().all()
 
-# 6. API Tìm kiếm phim (ĐẶT TRƯỚC route /api/movies/{slug})
+# 3. API Tìm kiếm phim
 @app.get("/api/movies/search")
 def search_movies(q: str = Query("", description="Từ khóa tìm kiếm"), db: Session = Depends(get_db)):
     if not q or not q.strip():
@@ -144,7 +144,7 @@ def search_movies(q: str = Query("", description="Từ khóa tìm kiếm"), db: 
     """)
     return db.execute(query, {"q": search_pattern}).mappings().all()
 
-# 7. API Lấy chi tiết 1 bộ phim + tất cả các tập + thể loại + lịch chiếu (Trang xem phim)
+# 4. API Lấy chi tiết 1 bộ phim theo slug (ĐẶT CUỐI CÙNG trong nhóm movies để tránh nuốt các route trên)
 @app.get("/api/movies/{slug}")
 def get_movie_detail(slug: str, db: Session = Depends(get_db)):
     movie_query = text("""
@@ -165,7 +165,6 @@ def get_movie_detail(slug: str, db: Session = Depends(get_db)):
     """)
     episodes = db.execute(episodes_query, {"movie_id": movie["id"]}).mappings().all()
 
-    # Lấy danh sách thể loại của phim này thông qua bảng trung gian movie_categories
     categories_query = text("""
         SELECT c.id, c.name, c.slug
         FROM categories c
