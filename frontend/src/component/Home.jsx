@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Banner from "./Banner";
 import Movielist from "./Movielist";
 import RankingBoard from "./RankingBoard";
 import VideoPlayer from "./VideoPlayer";
 import ScheduleSection from "./ScheduleSection";
+
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Home() {
   const [movies, setMovies] = useState([]);
@@ -13,7 +16,7 @@ function Home() {
 
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:8000/api/movies")
+      .get(`${API_URL}/api/movies`)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setMovies(data);

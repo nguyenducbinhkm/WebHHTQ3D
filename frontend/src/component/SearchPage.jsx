@@ -4,6 +4,9 @@ import axios from "axios";
 import { FaPlay, FaFrown, FaFire } from "react-icons/fa";
 import Header from "./Header"; // 1. Import Header
 
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -22,10 +25,8 @@ const SearchPage = () => {
     setLoading(true);
 
     Promise.all([
-      axios.get(
-        `http://127.0.0.1:8000/api/movies/search?q=${encodeURIComponent(query)}`,
-      ),
-      axios.get(`http://127.0.0.1:8000/api/movies/top-hot`),
+      axios.get(`${API_URL}/api/movies/search?q=${encodeURIComponent(query)}`),
+      axios.get(`${API_URL}/api/movies/top-hot`),
     ])
       .then(([searchRes, topRes]) => {
         const searchData = Array.isArray(searchRes.data)

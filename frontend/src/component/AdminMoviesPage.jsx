@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Header from "./Header"; // Hoặc layout admin riêng của bạn
 
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AdminMoviesPage() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +13,7 @@ function AdminMoviesPage() {
   // 1. Lấy danh sách phim từ Backend
   const fetchMovies = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/movies");
+      const response = await axios.get(`${API_URL}/api/movies`);
       setMovies(response.data || []);
       setLoading(false);
     } catch (err) {
@@ -42,7 +45,7 @@ function AdminMoviesPage() {
     setUpdatingId(movieId);
     try {
       // Bổ sung thêm chữ 'admin' vào đường dẫn cho khớp với backend router
-      await axios.patch(`http://127.0.0.1:8000/api/admin/movies/${movieId}/`, {
+      await axios.patch(`${API_URL}/api/admin/movies/${movieId}/`, {
         status: movie.status || "ongoing",
         total_ep: Number(movie.total_ep || movie.total_episodes || 0),
       });
@@ -152,7 +155,6 @@ function AdminMoviesPage() {
                         value={totalEp === 0 ? "" : totalEp}
                         onChange={(e) => {
                           const val = e.target.value;
-                          // Chỉ cho phép nhập các ký tự số hoặc để trống
                           if (/^\d*$/.test(val)) {
                             handleChangeField(
                               movieId,
@@ -186,5 +188,5 @@ function AdminMoviesPage() {
     </div>
   );
 }
-// Ghi chú: dùng export default chuẩn ES6
+
 export default AdminMoviesPage;

@@ -13,6 +13,9 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 function WatchPage() {
   const { slug } = useParams();
   const [movieData, setMovieData] = useState(null);
@@ -25,8 +28,8 @@ function WatchPage() {
     setLoading(true);
     setCurrentEpisode(1);
 
-    const fetchDetail = axios.get(`http://127.0.0.1:8000/api/movies/${slug}`);
-    const fetchAll = axios.get("http://127.0.0.1:8000/api/movies");
+    const fetchDetail = axios.get(`${API_URL}/api/movies/${slug}`);
+    const fetchAll = axios.get(`${API_URL}/api/movies`);
 
     Promise.all([fetchDetail, fetchAll])
       .then(([detailRes, allRes]) => {

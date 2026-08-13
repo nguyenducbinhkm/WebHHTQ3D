@@ -14,6 +14,9 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Login from "./Login";
 
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Header = () => {
   const [categories, setCategories] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,7 +35,7 @@ const Header = () => {
 
   useEffect(() => {
     axios
-      .get("http://127.0.0.1:8000/api/categories")
+      .get(`${API_URL}/api/categories`)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setCategories(data);
@@ -66,9 +69,7 @@ const Header = () => {
 
     const timer = setTimeout(() => {
       axios
-        .get(
-          `http://127.0.0.1:8000/api/movies/search?q=${encodeURIComponent(query)}`,
-        )
+        .get(`${API_URL}/api/movies/search?q=${encodeURIComponent(query)}`)
         .then((res) => {
           const data = Array.isArray(res.data)
             ? res.data

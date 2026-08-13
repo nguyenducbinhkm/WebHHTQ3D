@@ -10,6 +10,9 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 
+// Lấy base URL từ biến môi trường của Vite
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Banner = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +48,7 @@ const Banner = () => {
   useEffect(() => {
     let isMounted = true;
     axios
-      .get("http://127.0.0.1:8000/api/movies")
+      .get(`${API_URL}/api/movies`)
       .then((res) => {
         if (!isMounted) return;
         const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
@@ -263,7 +266,11 @@ const Banner = () => {
                     <div className="flex items-center gap-6 bg-white/10 backdrop-blur-md px-6 py-3.5 rounded-full border border-white/15 text-gray-200">
                       <button
                         onClick={(e) => toggleFavorite(movie, e)}
-                        className={`transition ${isFavorite ? "text-red-500 scale-110" : "hover:text-red-500"}`}
+                        className={`transition ${
+                          isFavorite
+                            ? "text-red-500 scale-110"
+                            : "hover:text-red-500"
+                        }`}
                         title={
                           isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"
                         }
