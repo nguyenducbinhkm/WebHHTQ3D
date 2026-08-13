@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import axios from "axios";
 import { FaPlay, FaFrown, FaFire } from "react-icons/fa";
-import Header from "./Header"; // 1. Import Header
 
 // Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
@@ -85,10 +84,7 @@ const SearchPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#121316] text-white">
-      {/* 2. Đặt Header cố định ở đầu trang */}
-      <Header />
-
+    <div className="min-h-screen bg-[#121316] text-white pt-6">
       {/* Nội dung kết quả tìm kiếm */}
       <div className="px-4 md:px-10 py-6">
         <div className="mb-6 border-b border-gray-800 pb-3 flex items-baseline justify-between">
