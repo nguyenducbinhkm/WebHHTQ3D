@@ -13,12 +13,11 @@ from routers import admin_movies
 
 app = FastAPI(title="Movie 3D Donghua API")
 
-# Cấu hình CORS để Frontend (Vercel) gọi API không bị chặn
-origins = [
-    "https://web-hhtq-3-d.vercel.app",  # Domain Vercel của bạn
-    "http://localhost:5173",             # Chạy local (Vite)
-    "http://localhost:3000",
-]
+# Cấu hình CORS linh hoạt cho cả Local và Production (Vercel)
+# Có thể ghi đè bằng biến môi trường ALLOWED_ORIGINS trên Render
+DEFAULT_ORIGINS = "https://web-hhtq-3-d.vercel.app,http://localhost:5173,http://localhost:3000"
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", DEFAULT_ORIGINS)
+origins = [origin.strip() for origin in allowed_origins_env.split(",")]
 
 app.add_middleware(
     CORSMiddleware,

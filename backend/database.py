@@ -5,10 +5,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Lấy chuỗi kết nối trực tiếp từ biến môi trường (Database URL của Supabase)
+# Lấy thông số từ môi trường (nếu trên Render có biến DATABASE_URL thì ưu tiên dùng, nếu không thì tự ghép từ DB_HOST, DB_USER...)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Engine kết nối tới PostgreSQL
+if not DATABASE_URL:
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "3306")
+    DB_USER = os.getenv("DB_USER", "root")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+    DB_NAME = os.getenv("DB_NAME", "movie_3ddonghua")
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
