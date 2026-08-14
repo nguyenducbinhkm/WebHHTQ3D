@@ -5,9 +5,8 @@ import Movielist from "./Movielist";
 import RankingBoard from "./RankingBoard";
 import VideoPlayer from "./VideoPlayer";
 import ScheduleSection from "./ScheduleSection";
-import Pagination from "./Pagination"; // Nhập component phân trang vừa tạo
+import Pagination from "./Pagination";
 
-// Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
 
 function Home() {
@@ -15,9 +14,9 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [currentVideo, setCurrentVideo] = useState(null);
 
-  // State phục vụ phân trang
+  // Cấu hình 18 phim mỗi trang
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16; // Giới hạn 16 phim mỗi trang
+  const itemsPerPage = 18;
 
   useEffect(() => {
     axios
@@ -33,7 +32,6 @@ function Home() {
       });
   }, []);
 
-  // Tính toán cắt mảng lấy 16 phim cho trang hiện tại
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentMovies = movies.slice(indexOfFirstItem, indexOfLastItem);
@@ -50,7 +48,6 @@ function Home() {
     <div className="bg-[#0b0c0e] min-h-screen text-white">
       <Banner onPlay={handlePlayKiemLai} />
 
-      {/* Mở rộng max-w lên 1650px để thoát dáng bị hẹp */}
       <main className="max-w-[1650px] mx-auto px-4 md:px-8 py-8">
         {loading ? (
           <div className="text-center py-12 text-gray-400 font-medium">
@@ -59,34 +56,29 @@ function Home() {
         ) : (
           <>
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Cột trái */}
               <div className="flex-1 w-full min-w-0">
-                {/* Chỉ truyền 16 phim của trang hiện tại vào Movielist */}
                 <Movielist
                   title="HOẠT HÌNH 3D MỚI CẬP NHẬT"
                   data={currentMovies}
                 />
 
-                {/* Thanh chuyển trang hiển thị ngay bên dưới danh sách phim */}
                 {totalPages > 1 && (
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={(page) => {
                       setCurrentPage(page);
-                      window.scrollTo({ top: 400, behavior: "smooth" }); // Cuộn nhẹ lên khu vực danh sách khi đổi trang
+                      window.scrollTo({ top: 400, behavior: "smooth" });
                     }}
                   />
                 )}
               </div>
 
-              {/* Cột phải: Bảng xếp hạng */}
               <div className="w-full lg:w-[380px] shrink-0 sticky top-6">
                 <RankingBoard movies={movies} />
               </div>
             </div>
 
-            {/* Phần Lịch Phim */}
             <div className="mt-12">
               <ScheduleSection />
             </div>

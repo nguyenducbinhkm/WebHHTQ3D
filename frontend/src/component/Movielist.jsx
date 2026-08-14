@@ -12,8 +12,8 @@ function Movielist({ title, data = [] }) {
         </h2>
       </div>
 
-      {/* Grid 4 cột chuẩn tỉ lệ poster 2/3 */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+      {/* Grid: 3 cột trên mobile, 4 cột trên desktop */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
         {movieList.map((movie, idx) => {
           const currentEp = movie.current_ep || 0;
           const totalEp = movie.total_ep || 0;
@@ -23,7 +23,7 @@ function Movielist({ title, data = [] }) {
           let episodeLabel = "Tập mới";
 
           if (status === "trailer") {
-            episodeLabel = "Trailer"; // Nếu là trailer thì hiện chữ Trailer
+            episodeLabel = "Trailer";
           } else if (totalEp > 0 && totalEp > currentEp) {
             episodeLabel = `Tập ${currentEp}/${totalEp}`;
           } else if (currentEp > 0) {
@@ -49,19 +49,19 @@ function Movielist({ title, data = [] }) {
                 />
 
                 {/* Tag Tập Phim / Trailer */}
-                <div className="absolute top-2.5 left-2.5 bg-red-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-md shadow-md backdrop-blur-sm">
+                <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 bg-red-600/90 text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md shadow-md backdrop-blur-sm">
                   {episodeLabel}
                 </div>
 
                 {/* Tag Sub/TM */}
-                <div className="absolute bottom-2.5 left-2.5 bg-teal-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-md backdrop-blur-sm">
+                <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 bg-teal-600/90 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 sm:px-2 rounded shadow-md backdrop-blur-sm">
                   SUB+TM
                 </div>
               </div>
 
               {/* Tiêu đề dưới Poster */}
-              <div className="p-3 bg-[#14161d]">
-                <h3 className="text-sm font-bold text-gray-200 group-hover:text-sky-400 truncate transition">
+              <div className="p-2.5 sm:p-3 bg-[#14161d]">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-200 group-hover:text-sky-400 truncate transition">
                   {movie.title}
                 </h3>
               </div>
