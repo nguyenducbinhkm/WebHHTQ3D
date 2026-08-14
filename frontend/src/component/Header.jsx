@@ -8,13 +8,11 @@ import {
   FaSpinner,
   FaTimes,
   FaPlayCircle,
-  // Đã bỏ FaUser vì dùng ảnh thay thế
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Login from "./Login";
 
-// Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Header = () => {
@@ -29,6 +27,9 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // State để bật/tắt ô tìm kiếm trên mobile khi bấm vào icon kính núp
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const searchRef = useRef(null);
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ const Header = () => {
       }
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowDropdown(false);
+        setIsMobileSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -90,6 +92,7 @@ const Header = () => {
     e.preventDefault();
     if (searchTerm.trim()) {
       setShowDropdown(false);
+      setIsMobileSearchOpen(false);
       navigate(`/tim-kiem?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
@@ -107,7 +110,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-[#22252a] text-white px-3 md:px-5 py-2.5 flex items-center justify-between shadow-md relative z-50 gap-2">
+    <header className="bg-[#22252a] text-white px-2.5 md:px-5 py-2.5 flex items-center justify-between shadow-md relative z-50 gap-2">
       {/* Bên trái: Menu Icon + Logo */}
       <div
         className="flex items-center space-x-2 md:space-x-3 relative shrink-0"
@@ -115,7 +118,7 @@ const Header = () => {
       >
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="text-white hover:text-sky-400 text-xl focus:outline-none p-1 transition-colors flex items-center gap-1"
+          className="text-white hover:text-sky-400 text-lg focus:outline-none p-1 transition-colors flex items-center gap-1"
         >
           <FaBars />
           <FaCaretDown className="text-xs text-gray-400" />
@@ -149,7 +152,7 @@ const Header = () => {
 
         <Link
           to="/"
-          className="text-xl md:text-2xl font-black tracking-tight cursor-pointer select-none leading-none"
+          className="text-lg sm:text-xl md:text-2xl font-black tracking-tight cursor-pointer select-none leading-none"
         >
           <span className="text-[#3b82f6]">DUC</span>
           <span className="text-[#60a5fa]">BINH</span>
@@ -157,14 +160,58 @@ const Header = () => {
         </Link>
       </div>
 
-      {/* Ở giữa: Thanh tìm kiếm (Ẩn gọn trên mobile nhỏ, hiện đầy đủ từ màn hình md trở lên) */}
+      {/* Ở giữa: Thanh tìm kiếm */}
       <div
-        className="flex-1 max-w-[550px] mx-2 md:mx-6 relative"
+        className="flex-1 max-w-[550px] mx-1 md:mx-6 relative"
         ref={searchRef}
       >
+        {/* Trên Mobile: Mặc định hiện nút kính núp. Khi bấm vào sẽ bung ra ô input tìm kiếm */}
+        <div className="md:hidden flex justify-end">
+          {!isMobileSearchOpen ? (
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(true)}
+              className="p-2 text-gray-300 hover:text-sky-400 transition-colors"
+              title="Tìm kiếm"
+            >
+              <FaSearch className="text-base text-[#38bdf8]" />
+            </button>
+          ) : (
+            <form
+              onSubmit={handleSearchSubmit}
+              className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex items-center bg-white rounded-sm px-2 py-1 shadow-md z-20"
+            >
+              <input
+                type="text"
+                autoFocus
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm phim..."
+                className="w-full text-gray-800 bg-transparent focus:outline-none text-xs"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="text-gray-400 hover:text-gray-600 mr-1"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              )}
+              <button
+                type="submit"
+                className="bg-[#4b5563] text-white text-[11px] px-2 py-1 rounded shrink-0 flex items-center gap-1"
+              >
+                <FaSearch className="text-[10px]" />
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Trên Desktop (từ md trở lên): Giữ nguyên thanh tìm kiếm đầy đủ như bản gốc */}
         <form
           onSubmit={handleSearchSubmit}
-          className="flex items-center bg-white rounded-sm pl-2 md:pl-3 pr-1 py-1 shadow-inner relative z-10"
+          className="hidden md:flex items-center bg-white rounded-sm pl-3 pr-1 py-1 shadow-inner relative z-10"
         >
           <input
             type="text"
@@ -172,14 +219,14 @@ const Header = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => searchTerm.trim() && setShowDropdown(true)}
             placeholder="Tìm kiếm phim..."
-            className="w-full text-gray-800 bg-transparent focus:outline-none text-xs md:text-sm placeholder-gray-400 pr-1 md:pr-2"
+            className="w-full text-gray-800 bg-transparent focus:outline-none text-sm placeholder-gray-400 pr-2"
           />
 
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm("")}
-              className="text-gray-400 hover:text-gray-600 mr-1 md:mr-2"
+              className="text-gray-400 hover:text-gray-600 mr-2"
             >
               <FaTimes className="text-xs" />
             </button>
@@ -188,14 +235,15 @@ const Header = () => {
           <div className="flex items-center space-x-2">
             <button
               type="submit"
-              className="bg-[#4b5563] hover:bg-[#374151] text-white text-[11px] md:text-xs px-2 md:px-3 py-1 rounded transition-colors font-medium flex items-center gap-1 shrink-0"
+              className="bg-[#4b5563] hover:bg-[#374151] text-white text-xs px-3 py-1 rounded transition-colors font-medium flex items-center gap-1 shrink-0"
             >
               <FaSearch className="text-xs" />
-              <span className="hidden sm:inline">Tìm</span>
+              <span>Tìm</span>
             </button>
           </div>
         </form>
 
+        {/* Dropdown kết quả tìm kiếm chung cho cả mobile và desktop */}
         {showDropdown && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1c20] border border-gray-700 rounded-b shadow-2xl overflow-hidden z-50 max-h-[420px] overflow-y-auto">
             {isSearching ? (
@@ -212,7 +260,10 @@ const Header = () => {
                   <Link
                     key={movie.id || movie.slug}
                     to={`/watch/${movie.slug}`}
-                    onClick={() => setShowDropdown(false)}
+                    onClick={() => {
+                      setShowDropdown(false);
+                      setIsMobileSearchOpen(false);
+                    }}
                     className="flex items-center gap-3 p-2.5 hover:bg-[#2a2d34] border-b border-gray-800/80 transition group"
                   >
                     <img
@@ -249,8 +300,7 @@ const Header = () => {
       </div>
 
       {/* Bên phải: Lịch sử, Yêu thích + Khu vực tài khoản */}
-      <div className="flex items-center space-x-2.5 md:space-x-4 shrink-0">
-        {/* Lịch sử xem: Ẩn chữ trên mobile, chỉ hiện icon; hiện đầy đủ từ md trở lên */}
+      <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
         <Link
           to="/lich-su"
           className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-0.5"
@@ -262,7 +312,6 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Phim yêu thích: Ẩn chữ trên mobile, chỉ hiện icon; hiện đầy đủ từ md trở lên */}
         <Link
           to="/favorites"
           className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-0.5"
@@ -274,7 +323,6 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Hiển thị ảnh đại diện tròn hoặc nút đăng nhập */}
         {isLoggedIn ? (
           <div
             className="w-8 h-8 md:w-9 md:h-9 ml-1 rounded-full overflow-hidden border-2 border-sky-400/80 cursor-pointer hover:opacity-90 transition shadow-md shrink-0"
