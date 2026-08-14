@@ -133,7 +133,6 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
     const video = videoRef.current;
     if (!video) return;
 
-    // Lấy duration trực tiếp từ DOM element để tránh trễ state
     const videoDuration =
       Number.isFinite(video.duration) && video.duration > 0
         ? video.duration
@@ -203,7 +202,6 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
     }
   };
 
-  // Tự động ẩn thanh Control khi không di chuột
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -212,7 +210,6 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
     }, 3500);
   };
 
-  // Format giây thành mm:ss
   const formatTime = (timeInSec) => {
     if (isNaN(timeInSec)) return "00:00";
     const min = Math.floor(timeInSec / 60);
@@ -244,14 +241,14 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
         className="w-full h-full object-contain cursor-pointer"
       />
 
-      {/* THANH ĐIỀU KHIỂN TÙY CHỈNH (CUSTOM CONTROLS) */}
+      {/* THANH ĐIỀU KHIỂN ĐẦY ĐỦ CHO CẢ MOBILE VÀ DESKTOP */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent px-6 pb-4 pt-8 transition-opacity duration-300 z-30 ${
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent px-2 sm:px-6 pb-2 sm:pb-4 pt-6 sm:pt-8 transition-opacity duration-300 z-30 ${
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
         {/* Thanh Progress Bar */}
-        <div className="relative w-full h-2 bg-gray-600/60 rounded-full mb-4 cursor-pointer group/progress">
+        <div className="relative w-full h-1.5 sm:h-2 bg-gray-600/60 rounded-full mb-2 sm:mb-4 cursor-pointer group/progress">
           <div
             className="absolute top-0 left-0 h-full bg-white rounded-full transition-all"
             style={{
@@ -271,11 +268,11 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
         {/* Các nút Chức năng */}
         <div className="flex items-center justify-between text-white">
           {/* Cụm Bên Trái */}
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
             {/* Play/Pause */}
             <button
               onClick={togglePlay}
-              className="hover:text-sky-400 transition text-2xl flex items-center"
+              className="hover:text-sky-400 transition text-lg sm:text-2xl flex items-center"
             >
               {isPlaying ? <FaPause /> : <FaPlay />}
             </button>
@@ -283,7 +280,7 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
             {/* Tua 10s Ngược */}
             <button
               onClick={() => skip(-10)}
-              className="hover:text-sky-400 transition text-3xl flex items-center"
+              className="hover:text-sky-400 transition text-xl sm:text-3xl flex items-center"
               title="Tua ngược 10s"
             >
               <MdReplay10 />
@@ -292,17 +289,17 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
             {/* Tua 10s Tiến */}
             <button
               onClick={() => skip(10)}
-              className="hover:text-sky-400 transition text-3xl flex items-center"
+              className="hover:text-sky-400 transition text-xl sm:text-3xl flex items-center"
               title="Tua tiến 10s"
             >
               <MdForward10 />
             </button>
 
-            {/* Âm lượng */}
-            <div className="flex items-center space-x-3 group/vol">
+            {/* Âm lượng (Responsive: thu nhỏ thanh range trên mobile nhưng vẫn hiện đầy đủ) */}
+            <div className="flex items-center space-x-1.5 sm:space-x-3 group/vol">
               <button
                 onClick={toggleMute}
-                className="hover:text-sky-400 transition text-2xl flex items-center"
+                className="hover:text-sky-400 transition text-lg sm:text-2xl flex items-center"
               >
                 {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
               </button>
@@ -313,23 +310,23 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
                 step="0.05"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => changeVolume(parseFloat(e.target.value))}
-                className="w-20 h-1.5 bg-gray-600 accent-sky-400 rounded cursor-pointer"
+                className="w-10 sm:w-16 md:w-20 h-1.5 bg-gray-600 accent-sky-400 rounded cursor-pointer"
               />
             </div>
 
-            {/* Hiển thị thời gian đã được tinh chỉnh font chữ đẹp hơn */}
-            <span className="text-base font-sans font-semibold text-gray-200 tracking-wider pl-2 tabular-nums">
+            {/* Thời gian */}
+            <span className="text-[11px] sm:text-sm md:text-base font-sans font-semibold text-gray-200 tracking-wider pl-1 sm:pl-2 tabular-nums whitespace-nowrap">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
 
-          {/* Cụm Bên Phải (mở rộng khoảng cách dãn ra) */}
-          <div className="flex items-center space-x-7 relative">
-            {/* Cài đặt (Tốc độ phát) */}
+          {/* Cụm Bên Phải */}
+          <div className="flex items-center space-x-2.5 sm:space-x-5 md:space-x-7 relative">
+            {/* Cài đặt tốc độ */}
             <div className="relative flex items-center">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="hover:text-sky-400 transition text-2xl flex items-center"
+                className="hover:text-sky-400 transition text-lg sm:text-2xl flex items-center"
                 title="Cài đặt tốc độ"
               >
                 <FaCog />
@@ -337,7 +334,7 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
 
               {/* Menu cài đặt tốc độ */}
               {showSettings && (
-                <div className="absolute bottom-10 right-0 bg-black/90 border border-gray-700 rounded-lg p-2.5 w-32 text-xs text-gray-200 z-50 backdrop-blur shadow-xl">
+                <div className="absolute bottom-8 right-0 bg-black/90 border border-gray-700 rounded-lg p-2 w-28 sm:w-32 text-xs text-gray-200 z-50 backdrop-blur shadow-xl">
                   <div className="font-semibold mb-1 text-gray-400 border-b border-gray-700 pb-1 text-center">
                     Tốc độ phát
                   </div>
@@ -345,7 +342,7 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
                     <button
                       key={speed}
                       onClick={() => changeSpeed(speed)}
-                      className={`w-full text-left px-2 py-1.5 rounded hover:bg-sky-500 hover:text-white transition ${
+                      className={`w-full text-left px-2 py-1 rounded hover:bg-sky-500 hover:text-white transition ${
                         playbackRate === speed
                           ? "bg-sky-600 text-white font-bold"
                           : ""
@@ -358,10 +355,10 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
               )}
             </div>
 
-            {/* Picture-in-Picture */}
+            {/* Picture-in-Picture (Phát trong nền) */}
             <button
               onClick={togglePiP}
-              className="hover:text-sky-400 transition text-3xl flex items-center"
+              className="hover:text-sky-400 transition text-2xl sm:text-3xl flex items-center"
               title="Phát trong nền (Picture-in-Picture)"
             >
               <MdPictureInPictureAlt />
@@ -370,7 +367,7 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
             {/* Phóng Toàn Màn Hình */}
             <button
               onClick={toggleFullscreen}
-              className="hover:text-sky-400 transition text-2xl flex items-center"
+              className="hover:text-sky-400 transition text-lg sm:text-2xl flex items-center"
               title="Toàn màn hình"
             >
               {isFullscreen ? <FaCompress /> : <FaExpand />}
@@ -383,10 +380,10 @@ function VideoPlayer({ url, title, onClose, isModal = false }) {
 
   if (isModal) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm">
         <div className="relative w-full max-w-5xl bg-gray-900 rounded-lg overflow-hidden shadow-2xl border border-gray-800">
           <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800">
-            <h3 className="text-white font-semibold text-lg truncate">
+            <h3 className="text-white font-semibold text-base sm:text-lg truncate">
               {title || "Đang phát video"}
             </h3>
             {onClose && (

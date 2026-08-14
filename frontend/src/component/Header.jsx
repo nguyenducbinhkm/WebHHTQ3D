@@ -107,9 +107,12 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-[#22252a] text-white px-5 py-2.5 flex items-center justify-between shadow-md relative z-50">
+    <header className="bg-[#22252a] text-white px-3 md:px-5 py-2.5 flex items-center justify-between shadow-md relative z-50 gap-2">
       {/* Bên trái: Menu Icon + Logo */}
-      <div className="flex items-center space-x-3 relative" ref={menuRef}>
+      <div
+        className="flex items-center space-x-2 md:space-x-3 relative shrink-0"
+        ref={menuRef}
+      >
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="text-white hover:text-sky-400 text-xl focus:outline-none p-1 transition-colors flex items-center gap-1"
@@ -146,7 +149,7 @@ const Header = () => {
 
         <Link
           to="/"
-          className="text-2xl font-black tracking-tight cursor-pointer select-none leading-none"
+          className="text-xl md:text-2xl font-black tracking-tight cursor-pointer select-none leading-none"
         >
           <span className="text-[#3b82f6]">DUC</span>
           <span className="text-[#60a5fa]">BINH</span>
@@ -154,11 +157,14 @@ const Header = () => {
         </Link>
       </div>
 
-      {/* Ở giữa: Thanh tìm kiếm */}
-      <div className="flex-1 max-w-[550px] mx-6 relative" ref={searchRef}>
+      {/* Ở giữa: Thanh tìm kiếm (Ẩn gọn trên mobile nhỏ, hiện đầy đủ từ màn hình md trở lên) */}
+      <div
+        className="flex-1 max-w-[550px] mx-2 md:mx-6 relative"
+        ref={searchRef}
+      >
         <form
           onSubmit={handleSearchSubmit}
-          className="flex items-center bg-white rounded-sm pl-3 pr-1 py-1 shadow-inner relative z-10"
+          className="flex items-center bg-white rounded-sm pl-2 md:pl-3 pr-1 py-1 shadow-inner relative z-10"
         >
           <input
             type="text"
@@ -166,14 +172,14 @@ const Header = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => searchTerm.trim() && setShowDropdown(true)}
             placeholder="Tìm kiếm phim..."
-            className="w-full text-gray-800 bg-transparent focus:outline-none text-sm placeholder-gray-400 pr-2"
+            className="w-full text-gray-800 bg-transparent focus:outline-none text-xs md:text-sm placeholder-gray-400 pr-1 md:pr-2"
           />
 
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm("")}
-              className="text-gray-400 hover:text-gray-600 mr-2"
+              className="text-gray-400 hover:text-gray-600 mr-1 md:mr-2"
             >
               <FaTimes className="text-xs" />
             </button>
@@ -182,10 +188,10 @@ const Header = () => {
           <div className="flex items-center space-x-2">
             <button
               type="submit"
-              className="bg-[#4b5563] hover:bg-[#374151] text-white text-xs px-3 py-1 rounded transition-colors font-medium flex items-center gap-1"
+              className="bg-[#4b5563] hover:bg-[#374151] text-white text-[11px] md:text-xs px-2 md:px-3 py-1 rounded transition-colors font-medium flex items-center gap-1 shrink-0"
             >
               <FaSearch className="text-xs" />
-              <span>Tìm</span>
+              <span className="hidden sm:inline">Tìm</span>
             </button>
           </div>
         </form>
@@ -243,31 +249,35 @@ const Header = () => {
       </div>
 
       {/* Bên phải: Lịch sử, Yêu thích + Khu vực tài khoản */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2.5 md:space-x-4 shrink-0">
+        {/* Lịch sử xem: Ẩn chữ trên mobile, chỉ hiện icon; hiện đầy đủ từ md trở lên */}
         <Link
           to="/lich-su"
-          className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-1"
+          className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-0.5"
+          title="Lịch sử xem"
         >
-          <FaHistory className="text-[#38bdf8] text-lg group-hover:scale-105 transition-transform" />
-          <span className="text-[11px] mt-1 font-normal text-gray-200 whitespace-nowrap">
+          <FaHistory className="text-[#38bdf8] text-base md:text-lg group-hover:scale-105 transition-transform" />
+          <span className="text-[10px] md:text-[11px] mt-1 font-normal text-gray-200 hidden md:block whitespace-nowrap">
             Lịch sử xem
           </span>
         </Link>
 
+        {/* Phim yêu thích: Ẩn chữ trên mobile, chỉ hiện icon; hiện đầy đủ từ md trở lên */}
         <Link
           to="/favorites"
-          className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-1"
+          className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-0.5"
+          title="Phim yêu thích"
         >
-          <FaBookmark className="text-[#38bdf8] text-lg group-hover:scale-105 transition-transform" />
-          <span className="text-[11px] mt-1 font-normal text-gray-200 whitespace-nowrap">
+          <FaBookmark className="text-[#38bdf8] text-base md:text-lg group-hover:scale-105 transition-transform" />
+          <span className="text-[10px] md:text-[11px] mt-1 font-normal text-gray-200 hidden md:block whitespace-nowrap">
             Phim yêu thích
           </span>
         </Link>
 
-        {/* Hiển thị ảnh đại diện tròn khi đã đăng nhập */}
+        {/* Hiển thị ảnh đại diện tròn hoặc nút đăng nhập */}
         {isLoggedIn ? (
           <div
-            className="w-9 h-9 ml-2 rounded-full overflow-hidden border-2 border-sky-400/80 cursor-pointer hover:opacity-90 transition shadow-md shrink-0"
+            className="w-8 h-8 md:w-9 md:h-9 ml-1 rounded-full overflow-hidden border-2 border-sky-400/80 cursor-pointer hover:opacity-90 transition shadow-md shrink-0"
             title="Tài khoản của tôi"
           >
             <img
@@ -279,7 +289,7 @@ const Header = () => {
         ) : (
           <button
             onClick={() => setIsLoginOpen(true)}
-            className="bg-gradient-to-r from-[#60a5fa] to-[#38bdf8] hover:opacity-90 text-white text-xs font-medium px-4 py-2 rounded-sm shadow-sm transition-all ml-2 whitespace-nowrap"
+            className="bg-gradient-to-r from-[#60a5fa] to-[#38bdf8] hover:opacity-90 text-white text-[11px] md:text-xs font-medium px-2.5 md:px-4 py-1.5 md:py-2 rounded-sm shadow-sm transition-all ml-1 whitespace-nowrap"
           >
             Đăng Nhập
           </button>

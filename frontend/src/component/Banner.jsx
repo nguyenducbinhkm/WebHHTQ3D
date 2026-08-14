@@ -114,7 +114,7 @@ const Banner = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-[calc(100vh-56px)] min-h-[550px] bg-[#0b0c0e] flex items-center justify-center text-gray-400 font-medium text-lg">
+      <div className="w-full h-[50vh] min-h-[420px] bg-[#0b0c0e] flex items-center justify-center text-gray-400 font-medium text-lg">
         Đang tải Banner...
       </div>
     );
@@ -123,7 +123,7 @@ const Banner = () => {
   if (!total) return null;
 
   return (
-    <div className="relative w-full h-[calc(100vh-56px)] min-h-[600px] bg-[#0b0c0e] overflow-hidden text-white select-none banner-swiper-container flex flex-col justify-between">
+    <div className="relative w-full h-[360px] min-h-[360px] md:h-[62vh] md:min-h-[560px] bg-[#0b0c0e] overflow-hidden text-white select-none banner-swiper-container flex flex-col justify-between">
       {/* SWIPER CHÍNH */}
       <Swiper
         modules={[Autoplay, Pagination, EffectFade]}
@@ -132,10 +132,7 @@ const Banner = () => {
         slidesPerView={1}
         loop={true}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
-        pagination={{
-          clickable: true,
-          el: ".custom-swiper-pagination",
-        }}
+        pagination={false}
         speed={1000}
         onSwiper={(sw) => (mainSwiperRef.current = sw)}
         onSlideChange={(sw) => {
@@ -198,12 +195,12 @@ const Banner = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c0e] via-transparent to-transparent" />
               </div>
 
-              {/* Content */}
-              <div className="relative max-w-[1650px] mx-auto h-full px-6 md:px-12 flex items-center justify-between z-10 pb-20">
-                <div className="max-w-2xl space-y-5">
+              {/* ============ DESKTOP / TABLET CONTENT ============ */}
+              <div className="hidden md:flex relative max-w-[1650px] mx-auto h-full px-6 md:px-12 items-center justify-between z-10 pb-20">
+                <div className="max-w-2xl space-y-5 self-start mt-[60px]">
                   <div>
                     <h1
-                      className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-wide leading-relaxed text-amber-300 py-2 drop-shadow-2xl"
+                      className="text-5xl lg:text-7xl xl:text-8xl font-bold tracking-wide leading-relaxed text-amber-300 py-2 drop-shadow-2xl"
                       style={{
                         fontFamily: "'Charm', cursive",
                         textShadow:
@@ -312,7 +309,7 @@ const Banner = () => {
                   </div>
                 </div>
 
-                <div className="hidden lg:block w-[320px] h-[450px] xl:w-[350px] xl:h-[490px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 shrink-0">
+                <div className="hidden lg:block self-start mt-[28px] w-[360px] h-[420px] xl:w-[320px] xl:h-[490px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 shrink-0">
                   <img
                     src={posterUrl}
                     alt={title}
@@ -320,13 +317,135 @@ const Banner = () => {
                   />
                 </div>
               </div>
+
+              {/* ============ MOBILE CONTENT ============ */}
+              <div className="flex md:hidden relative h-full px-4 pt-4 pb-20 z-10 flex-col">
+                <div>
+                  {/* Tiêu đề + poster nhỏ góc phải */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 pr-1">
+                      <h1
+                        className="text-2xl font-bold leading-tight text-amber-300 drop-shadow-lg"
+                        style={{
+                          fontFamily: "'Charm', cursive",
+                          textShadow:
+                            "0 0 15px rgba(245, 158, 11, 0.5), 0 2px 8px rgba(0, 0, 0, 0.9)",
+                        }}
+                      >
+                        {title}
+                      </h1>
+
+                      <div className="flex items-center space-x-1 text-amber-400 text-sm mt-1.5">
+                        <FaStar />
+                        <FaStar />
+                        <FaStar />
+                        <FaStar />
+                        <FaStarHalfAlt />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        <span className="bg-red-600 text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md">
+                          {episodeLabel}
+                        </span>
+                        <span className="border border-gray-600 text-gray-300 text-[11px] font-semibold px-2.5 py-1 rounded bg-black/50 backdrop-blur-sm">
+                          {year}
+                        </span>
+                        <span className="border border-gray-600 text-gray-300 text-[11px] font-semibold px-2.5 py-1 rounded bg-black/50 backdrop-blur-sm">
+                          {quality}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {categoriesList.length > 0 ? (
+                          categoriesList.slice(0, 2).map((item, idx) => {
+                            const catName =
+                              typeof item === "object" ? item.name : item;
+                            const catSlug =
+                              typeof item === "object"
+                                ? item.slug
+                                : typeof item === "string"
+                                  ? item.toLowerCase().replace(/\s+/g, "-")
+                                  : "";
+                            const displayTitle =
+                              typeof catName === "string"
+                                ? catName.trim()
+                                : catName;
+                            const colorClass = getCategoryColor(displayTitle);
+
+                            return (
+                              <Link
+                                key={idx}
+                                to={`/the-loai/${catSlug}`}
+                                className={`text-[11px] px-2.5 py-1 rounded-lg border backdrop-blur-sm font-semibold transition duration-200 ${colorClass}`}
+                              >
+                                {displayTitle}
+                              </Link>
+                            );
+                          })
+                        ) : (
+                          <span className="text-sky-400 border-sky-500/40 bg-sky-500/10 text-[11px] px-2.5 py-1 rounded-lg border backdrop-blur-sm font-semibold">
+                            3D Donghua
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-[100px] h-[144px] rounded-lg overflow-hidden shadow-xl border border-white/15 shrink-0">
+                      <img
+                        src={posterUrl}
+                        alt={title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {english_title && (
+                    <p className="text-gray-300 text-sm mt-2 line-clamp-1 opacity-90">
+                      {english_title}
+                    </p>
+                  )}
+                </div>
+
+                {/* Nút play + yêu thích + info */}
+                <div className="flex items-center gap-4 mt-3">
+                  <Link
+                    to={`/watch/${slug}`}
+                    className="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-xl transition transform active:scale-95 shrink-0"
+                    title="Xem Phim"
+                  >
+                    <FaPlay className="text-base ml-0.5" />
+                  </Link>
+
+                  <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/15 text-gray-200">
+                    <button
+                      onClick={(e) => toggleFavorite(movie, e)}
+                      className={`transition ${
+                        isFavorite
+                          ? "text-red-500 scale-110"
+                          : "hover:text-red-500"
+                      }`}
+                      title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                    >
+                      <FaHeart className="text-base" />
+                    </button>
+                    <div className="w-[1px] h-4 bg-gray-500" />
+                    <Link
+                      to={`/watch/${slug}`}
+                      className="hover:text-sky-400 transition flex items-center"
+                      title="Xem thông tin chi tiết"
+                    >
+                      <FaInfo className="text-base" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </SwiperSlide>
           );
         })}
       </Swiper>
 
-      {/* THUMBNAIL STACKED 5 ẢNH - DỊCH TRÁI NHẸ ĐỂ TRÁNH CHẠM POSTER */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 hidden md:block w-full pointer-events-none">
+      {/* THUMBNAIL STACKED 5 ẢNH - DÙNG CHUNG CHO CẢ MOBILE VÀ DESKTOP */}
+      <div className="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 z-30 w-full pointer-events-none">
         <div className="thumb-stage pointer-events-auto mx-auto">
           {displayMovies.map((movie, idx) => {
             const pos = getPos(idx, activeIndex, total); // -2,-1,0,1,2
@@ -352,9 +471,6 @@ const Banner = () => {
         </div>
       </div>
 
-      {/* Pagination cho mobile */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2.5 z-20 custom-swiper-pagination md:hidden"></div>
-
       <style>{`
         .custom-swiper-pagination .swiper-pagination-bullet {
           height: 8px;
@@ -370,7 +486,7 @@ const Banner = () => {
           background-color: #dc2626 !important;
         }
 
-        /* ====== STACKED THUMB STAGE ====== */
+        /* ====== STACKED THUMB STAGE (DESKTOP) ====== */
         .thumb-stage {
           position: relative;
           width: 660px;
@@ -481,25 +597,50 @@ const Banner = () => {
 
         @media (max-width: 900px) {
           .thumb-stage {
-            width: 560px;
-            max-width: 78vw;
-            height: 96px;
+            width: 480px;
+            max-width: 92vw;
+            height: 88px;
           }
           .thumb-layer {
-            width: 170px;
-            height: 70px;
+            width: 160px;
+            height: 66px;
           }
           .thumb-pos--1 {
-            transform: translate(-50%, -50%) translateX(-98px) scale(0.66);
+            transform: translate(-50%, -50%) translateX(-96px) scale(0.68);
           }
           .thumb-pos-1 {
-            transform: translate(-50%, -50%) translateX(98px) scale(0.66);
+            transform: translate(-50%, -50%) translateX(96px) scale(0.68);
           }
           .thumb-pos--2 {
-            transform: translate(-50%, -50%) translateX(-158px) scale(0.48);
+            transform: translate(-50%, -50%) translateX(-156px) scale(0.5);
           }
           .thumb-pos-2 {
-            transform: translate(-50%, -50%) translateX(158px) scale(0.48);
+            transform: translate(-50%, -50%) translateX(156px) scale(0.5);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .thumb-stage {
+            width: 340px;
+            max-width: 92vw;
+            height: 70px;
+          }
+          .thumb-layer {
+            width: 130px;
+            height: 54px;
+            border-radius: 10px;
+          }
+          .thumb-pos--1 {
+            transform: translate(-50%, -50%) translateX(-78px) scale(0.68);
+          }
+          .thumb-pos-1 {
+            transform: translate(-50%, -50%) translateX(78px) scale(0.68);
+          }
+          .thumb-pos--2 {
+            transform: translate(-50%, -50%) translateX(-128px) scale(0.5);
+          }
+          .thumb-pos-2 {
+            transform: translate(-50%, -50%) translateX(128px) scale(0.5);
           }
         }
       `}</style>

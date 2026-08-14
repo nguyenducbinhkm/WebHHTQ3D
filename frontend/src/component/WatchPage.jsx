@@ -196,11 +196,37 @@ function WatchPage() {
     );
   }
 
+  // Component giao diện chung cho phần Danh sách tập (để tái sử dụng cho cả Desktop cột trái và Mobile nằm dưới)
+  const renderEpisodeList = () => (
+    <div className="w-full bg-[#18191c] p-3 rounded border border-gray-800 shrink-0">
+      <h3 className="text-xs font-bold text-gray-400 mb-2 px-1 uppercase tracking-wider">
+        Danh sách tập ({totalEpCount})
+      </h3>
+      <div className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-5 gap-1.5 max-h-[520px] overflow-y-auto pr-1">
+        {Array.from({ length: totalEpCount }, (_, i) => totalEpCount - i).map(
+          (ep) => (
+            <button
+              key={ep}
+              onClick={() => setCurrentEpisode(ep)}
+              className={`py-2 text-xs rounded font-medium transition ${
+                currentEpisode === ep
+                  ? "bg-[#38bdf8] text-black font-bold"
+                  : "bg-[#25272c] text-gray-300 hover:bg-gray-700"
+              }`}
+            >
+              Tập {ep}
+            </button>
+          ),
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-[#121315] min-h-screen text-white">
       <div className="container mx-auto px-6 py-4">
         {/* Breadcrumb */}
-        <div className="text-xs text-gray-400 mb-4 flex items-center gap-2">
+        <div className="text-xs text-gray-400 mb-4 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
           <Link to="/" className="hover:text-white">
             Trang chủ
           </Link>
@@ -214,34 +240,12 @@ function WatchPage() {
           </span>
         </div>
 
-        {/* Nội dung 2 cột */}
+        {/* Nội dung responsive: Desktop hiện 2 cột, Mobile hiện 1 cột */}
         <div className="flex flex-col md:flex-row gap-4 items-start mb-10">
-          {/* CỘT TRÁI: Danh sách tập */}
-          <div className="w-full md:w-72 bg-[#18191c] p-3 rounded border border-gray-800 shrink-0">
-            <h3 className="text-xs font-bold text-gray-400 mb-2 px-1 uppercase tracking-wider">
-              Danh sách tập ({totalEpCount})
-            </h3>
-            <div className="grid grid-cols-5 gap-1.5 max-h-[520px] overflow-y-auto pr-1">
-              {Array.from(
-                { length: totalEpCount },
-                (_, i) => totalEpCount - i,
-              ).map((ep) => (
-                <button
-                  key={ep}
-                  onClick={() => setCurrentEpisode(ep)}
-                  className={`py-2 text-xs rounded font-medium transition ${
-                    currentEpisode === ep
-                      ? "bg-[#38bdf8] text-black font-bold"
-                      : "bg-[#25272c] text-gray-300 hover:bg-gray-700"
-                  }`}
-                >
-                  Tập {ep}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* CỘT TRÁI (CHỈ HIỂN THỊ TRÊN DESKTOP từ md trở lên): Danh sách tập */}
+          <div className="hidden md:block w-72">{renderEpisodeList()}</div>
 
-          {/* CỘT PHẢI: Video Player, Nút Trước/Tiếp & Thông tin chi tiết */}
+          {/* CỘT PHẢI / TOÀN BỘ TRÊN MOBILE: Video Player, Nút Trước/Tiếp & Thông tin chi tiết */}
           <div className="flex-1 w-full flex flex-col space-y-4">
             {videoUrl ? (
               <VideoPlayer
@@ -258,17 +262,17 @@ function WatchPage() {
               </div>
             )}
 
-            {/* Thanh nút Trước / Tiếp tập dưới video */}
-            <div className="flex items-center justify-end gap-2">
+            {/* Thanh nút Trước / Tiếp tập dưới video (Không khung xám nền) */}
+            <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() =>
                   setCurrentEpisode((prev) => Math.max(prev - 1, 1))
                 }
                 disabled={currentEpisode <= 1}
-                className={`px-4 py-2 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                className={`px-4 py-2 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition bg-[#2d2f36] text-gray-200 hover:bg-[#3f424b] ${
                   currentEpisode <= 1
-                    ? "bg-[#1f2126] text-gray-600 cursor-not-allowed"
-                    : "bg-[#27292f] hover:bg-gray-700 text-gray-200"
+                    ? "opacity-40 cursor-not-allowed hover:bg-[#2d2f36]"
+                    : ""
                 }`}
               >
                 <FaChevronLeft className="text-[10px]" /> Trước
@@ -278,15 +282,18 @@ function WatchPage() {
                   setCurrentEpisode((prev) => Math.min(prev + 1, totalEpCount))
                 }
                 disabled={currentEpisode >= totalEpCount}
-                className={`px-4 py-2 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                className={`px-4 py-2 rounded-md text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition bg-[#2d2f36] text-gray-200 hover:bg-[#3f424b] ${
                   currentEpisode >= totalEpCount
-                    ? "bg-[#1f2126] text-gray-600 cursor-not-allowed"
-                    : "bg-[#27292f] hover:bg-gray-700 text-gray-200"
+                    ? "opacity-40 cursor-not-allowed hover:bg-[#2d2f36]"
+                    : ""
                 }`}
               >
                 Tiếp <FaChevronRight className="text-[10px]" />
               </button>
             </div>
+
+            {/* DANH SÁCH TẬP PHIM (CHỈ HIỂN THỊ DƯỚI VIDEO KHI Ở MÀN HÌNH MOBILE) */}
+            <div className="block md:hidden w-full">{renderEpisodeList()}</div>
 
             {/* Thông tin phim */}
             <div className="p-5 bg-[#18191c] border border-gray-800 rounded space-y-4">
