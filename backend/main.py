@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
 
-# IMPORT ROUTER AUTH MỚI THÊM
-from routers import admin_movies, auth
+# IMPORT CÁC ROUTER (admin_movies, auth, comments)
+from routers import admin_movies, auth, comments
 
 app = FastAPI(title="Movie 3D Donghua API")
 
@@ -28,9 +28,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ĐĂNG KÝ CÁC ROUTER
+# ĐĂNG KÝ CÁC ROUTER VÀO ỨNG DỤNG
 app.include_router(admin_movies.router)
-app.include_router(auth.router)  # <--- THÊM ROUTER XÁC THỰC TẠI ĐÂY
+app.include_router(auth.router)
+app.include_router(comments.router)  # <--- ĐÃ THÊM ROUTER COMMENTS TẠI ĐÂY
 
 @app.get("/")
 def home():

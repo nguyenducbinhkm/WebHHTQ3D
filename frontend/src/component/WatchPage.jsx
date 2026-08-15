@@ -4,11 +4,11 @@ import axios from "axios";
 import Header from "./Header";
 import Movielist from "./Movielist";
 import VideoPlayer from "./VideoPlayer";
+import CommentSection from "./CommentSection"; // <--- Đã import component CommentSection
 import {
   FaHeart,
   FaRegHeart,
   FaStar,
-  FaCommentAlt,
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa";
@@ -165,10 +165,17 @@ function WatchPage() {
     movieData?.m3u8_url ||
     movieData?.video_url ||
     movieData?.movie_info?.video_url ||
-    "";
+    formatMovieIdOrSlugVideo(); // fallback
+
+  function formatMovieIdOrSlugVideo() {
+    return "";
+  }
 
   const movieTitle =
     movieData?.movie_info?.title || movieData?.title || "Phim Hoạt Hình";
+
+  // Lấy ID phim chuẩn để truyền vào component bình luận
+  const movieId = movieData?.movie_info?.id || movieData?.id;
 
   // 4. Lấy Thể loại từ Database
   const categories =
@@ -374,11 +381,8 @@ function WatchPage() {
               </div>
             </div>
 
-            {/* Bình luận */}
-            <div className="bg-[#18191c] p-4 rounded border border-gray-800 flex items-center gap-3 text-gray-400 cursor-pointer hover:border-gray-600 transition">
-              <FaCommentAlt className="text-lg" />
-              <span>Bình luận (2404)</span>
-            </div>
+            {/* ==================== TÍCH HỢP COMPONENT BÌNH LUẬN ==================== */}
+            {movieId && <CommentSection movieId={movieId} />}
 
             {/* Mô tả phim */}
             <div className="p-4 bg-[#18191c] border border-gray-800 rounded">

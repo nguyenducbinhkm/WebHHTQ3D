@@ -43,6 +43,9 @@ class Movie(Base):
     # Quan hệ tới bảng categories qua bảng trung gian vừa tạo
     categories = relationship("Category", secondary=movie_categories, backref="movies")
 
+    # Quan hệ tới bảng comments (Tự động xóa bình luận nếu phim bị xóa)
+    comments = relationship("Comment", back_populates="movie", cascade="all, delete-orphan")
+
 class Episode(Base):
     __tablename__ = "episodes"
 
@@ -64,3 +67,19 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum('user', 'admin'), default='user')
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # Quan hệ tới bảng comments (Tự động xóa bình luận nếu tài khoản user bị xóa)
+    comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+
+class Comment(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    content = Column(Text, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # Thiết lập liên kết ngược lại với User và Movie
+    user = relationship("User", back_populates="comments")
+    movie = relationship("Movie", back_populates="comments")
