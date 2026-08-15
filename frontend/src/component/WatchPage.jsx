@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
 import Movielist from "./Movielist";
@@ -18,15 +18,27 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 function WatchPage() {
   const { slug } = useParams();
+  const location = useLocation();
+
   const [movieData, setMovieData] = useState(null);
   const [allMovies, setAllMovies] = useState([]);
   const [currentEpisode, setCurrentEpisode] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // Đọc số tập từ URL query string (ví dụ: ?ep=5) khi component mount hoặc URL thay đổi
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const epFromUrl = searchParams.get("ep");
+    if (epFromUrl) {
+      setCurrentEpisode(parseInt(epFromUrl, 10) || 1);
+    } else {
+      setCurrentEpisode(1);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     setLoading(true);
-    setCurrentEpisode(1);
 
     const fetchDetail = axios.get(`${API_URL}/api/movies/${slug}`);
     const fetchAll = axios.get(`${API_URL}/api/movies`);
@@ -196,7 +208,7 @@ function WatchPage() {
     );
   }
 
-  // Component giao diện chung cho phần Danh sách tập (để tái sử dụng cho cả Desktop cột trái và Mobile nằm dưới)
+  // Component giao diện chung cho phần Danh sách tập
   const renderEpisodeList = () => (
     <div className="w-full bg-[#18191c] p-3 rounded border border-gray-800 shrink-0">
       <h3 className="text-xs font-bold text-gray-400 mb-2 px-1 uppercase tracking-wider">
@@ -242,10 +254,10 @@ function WatchPage() {
 
         {/* Nội dung responsive: Desktop hiện 2 cột, Mobile hiện 1 cột */}
         <div className="flex flex-col md:flex-row gap-4 items-start mb-10">
-          {/* CỘT TRÁI (CHỈ HIỂN THỊ TRÊN DESKTOP từ md trở lên): Danh sách tập */}
+          {/* CỘT TRÁI: Danh sách tập */}
           <div className="hidden md:block w-72">{renderEpisodeList()}</div>
 
-          {/* CỘT PHẢI / TOÀN BỘ TRÊN MOBILE: Video Player, Nút Trước/Tiếp & Thông tin chi tiết */}
+          {/* CỘT PHẢI: Video Player & Thông tin chi tiết */}
           <div className="flex-1 w-full flex flex-col space-y-4">
             {videoUrl ? (
               <VideoPlayer
@@ -262,7 +274,7 @@ function WatchPage() {
               </div>
             )}
 
-            {/* Thanh nút Trước / Tiếp tập dưới video (Không khung xám nền) */}
+            {/* Thanh nút Trước / Tiếp tập dưới video */}
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() =>
@@ -292,7 +304,7 @@ function WatchPage() {
               </button>
             </div>
 
-            {/* DANH SÁCH TẬP PHIM (CHỈ HIỂN THỊ DƯỚI VIDEO KHI Ở MÀN HÌNH MOBILE) */}
+            {/* DANH SÁCH TẬP PHIM (MOBILE) */}
             <div className="block md:hidden w-full">{renderEpisodeList()}</div>
 
             {/* Thông tin phim */}

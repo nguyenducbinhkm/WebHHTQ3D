@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 function Movielist({ title, data = [] }) {
@@ -15,28 +15,29 @@ function Movielist({ title, data = [] }) {
       {/* Grid: 3 cột trên mobile, 4 cột trên desktop */}
       <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
         {movieList.map((movie, idx) => {
-          const currentEp = movie.current_ep || 0;
+          const currentEp = movie.current_ep || 1;
           const totalEp = movie.total_ep || 0;
           const status = movie.status;
 
-          // Xây dựng chuỗi hiển thị số tập theo đúng logic yêu cầu
+          // Xây dựng chuỗi hiển thị số tập
           let episodeLabel = "Tập mới";
-
           if (status === "trailer") {
             episodeLabel = "Trailer";
-          } else if (totalEp > 0 && totalEp > currentEp) {
+          } else if (totalEp > 0) {
             episodeLabel = `Tập ${currentEp}/${totalEp}`;
-          } else if (currentEp > 0) {
+          } else {
             episodeLabel = `Tập ${currentEp}`;
           }
 
           return (
             <Link
               key={movie.id || movie.slug || idx}
-              to={`/watch/${movie.slug}`}
+              to={`/watch/${movie.slug}?ep=${currentEp}`}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="group relative bg-[#14161d] rounded-2xl overflow-hidden border border-gray-800/80 hover:border-sky-500/60 transition-all duration-300 shadow-lg flex flex-col"
             >
-              {/* Tỉ lệ aspect [2/3] thuôn dài xịn xò */}
               <div className="relative aspect-[2/3] w-full overflow-hidden bg-gray-900">
                 <img
                   src={
@@ -48,7 +49,7 @@ function Movielist({ title, data = [] }) {
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 />
 
-                {/* Tag Tập Phim / Trailer */}
+                {/* Tag Tập Phim */}
                 <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 bg-red-600/90 text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md shadow-md backdrop-blur-sm">
                   {episodeLabel}
                 </div>
