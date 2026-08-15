@@ -9,7 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
-from routers import admin_movies
+
+# IMPORT ROUTER AUTH MỚI THÊM
+from routers import admin_movies, auth
 
 app = FastAPI(title="Movie 3D Donghua API")
 
@@ -26,8 +28,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Chỉ include router admin_movies
+# ĐĂNG KÝ CÁC ROUTER
 app.include_router(admin_movies.router)
+app.include_router(auth.router)  # <--- THÊM ROUTER XÁC THỰC TẠI ĐÂY
 
 @app.get("/")
 def home():

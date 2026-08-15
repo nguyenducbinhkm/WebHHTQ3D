@@ -37,33 +37,79 @@ export default function Login({ isOpen, onClose, onLoginSuccess }) {
 
   if (!isOpen) return null;
 
-  const handleLoginSubmit = (e) => {
+  // XỬ LÝ ĐĂNG NHẬP THẬT QUA BACKEND
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
-    if (loginData.rememberMe) {
-      localStorage.setItem("saved_username", loginData.username);
-    } else {
-      localStorage.removeItem("saved_username");
+    try {
+      const response = await fetch("http://localhost:8000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginData.username,
+          password: loginData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Đăng nhập thất bại!");
+      }
+
+      // Lưu Token và thông tin user vào localStorage để Header nhận diện và giữ trạng thái khi F5
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ username: loginData.username }),
+      );
+
+      if (loginData.rememberMe) {
+        localStorage.setItem("saved_username", loginData.username);
+      } else {
+        localStorage.removeItem("saved_username");
+      }
+
+      alert("Đăng nhập thành công!");
+      onLoginSuccess();
+      onClose();
+      window.location.reload(); // Tải lại trang để Header cập nhật giao diện ngay lập tức
+    } catch (error) {
+      alert(error.message);
     }
-
-    console.log("Login data:", loginData);
-
-    // Gọi hàm báo đăng nhập thành công để đổi giao diện ở Header
-    onLoginSuccess();
-
-    alert("Đăng nhập thành công!");
-    onClose();
   };
 
-  const handleRegisterSubmit = (e) => {
+  // XỬ LÝ ĐĂNG KÝ THẬT QUA BACKEND
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
+
     if (registerData.password !== registerData.confirmPassword) {
       alert("Mật khẩu xác nhận không khớp!");
       return;
     }
-    console.log("Register data:", registerData);
-    alert("Đăng ký thành công!");
-    setIsLogin(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: registerData.username,
+          email: registerData.email,
+          password: registerData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Đăng ký thất bại!");
+      }
+
+      alert("Đăng ký tài khoản thành công! Hãy chuyển sang đăng nhập.");
+      setIsLogin(true);
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (
@@ -188,7 +234,7 @@ export default function Login({ isOpen, onClose, onLoginSuccess }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Mật khẩu email
+                Mật khẩu
               </label>
               <div className="relative">
                 <input
@@ -220,7 +266,7 @@ export default function Login({ isOpen, onClose, onLoginSuccess }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Xác nhận lại mật khẩu email
+                Xác nhận lại mật khẩu
               </label>
               <div className="relative">
                 <input
