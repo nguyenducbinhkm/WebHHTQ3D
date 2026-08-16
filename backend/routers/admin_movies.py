@@ -1,3 +1,5 @@
+import os
+import shutil
 from typing import Optional, List
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -112,7 +114,7 @@ async def create_movie(
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý server: {str(e)}")
 
 
-# 2. THÊM TẬP PHIM (Tự động đánh số và lưu bằng Celery)
+# 2. THÊM TẬP PHIM (Tối ưu nhận file lớn bằng cách ghi stream tạm và đẩy sang Celery)
 @router.post("/{movie_slug}/episodes", summary="2. Thêm Tập Phim Cho Phim Đã Có")
 async def add_episode(
     movie_slug: str,
@@ -126,38 +128,35 @@ async def add_episode(
         if not movie:
             raise HTTPException(status_code=404, detail=f"Không tìm thấy phim với slug: '{movie_slug}'")
 
-        # Đọc và upload file video gốc lên Supabase bucket 'raw-videos'
-        video_bytes = await video_file.read()
-        raw_video_name = f"{movie_slug}/{episode_slug}.mp4"
+        # Tạo thư mục tạm local nếu chưa có để lưu file streaming tránh tràn RAM
+        temp_dir = os.path.join("temp", movie_slug)
+        os.makedirs(temp_dir, exist_ok=True)
         
-        raw_video_url = upload_file_to_supabase(
-            file_bytes=video_bytes,
-            file_name=raw_video_name,
-            bucket_name="raw-videos",
-            content_type="video/mp4"
-        )
-        
-        video_url_str = str(raw_video_url) if raw_video_url else None
-        if not video_url_str:
-            raise HTTPException(status_code=500, detail="Lỗi: Không thể lấy được URL của video gốc từ Supabase!")
+        temp_file_path = os.path.join(temp_dir, f"{episode_slug}.mp4")
 
-        # Kích hoạt Celery task xử lý cắt HLS và tự động tăng số tập, lưu DB ngầm
+        # Đọc và ghi file theo từng khối (chunk) nhỏ để chống tràn RAM khi gặp video 1GB+
+        with open(temp_file_path, "wb") as buffer:
+            while chunk := await video_file.read(1024 * 1024):  # Đọc từng 1MB một
+                buffer.write(chunk)
+
+        # Kích hoạt Celery task xử lý cắt HLS, upload lên Supabase và lưu Database ở dưới nền
         process_video_hls.delay(
-            raw_video_url=video_url_str,
+            input_file_path=temp_file_path,
             movie_slug=movie_slug,
             episode_slug=episode_slug
         )
 
         return {
-            "message": f"Đã tiếp nhận file video cho tập '{episode_slug}'. Celery đang xử lý cắt HLS và sẽ tự động tăng số tập để lưu vào Database!",
+            "message": f"Đã tiếp nhận file video cho tập '{episode_slug}'. Celery đang xử lý cắt HLS và lưu trữ ngầm!",
             "target_hls_path": f"movies/{movie_slug}/{episode_slug}"
         }
     except HTTPException as he:
         raise he
     except Exception as e:
-        db.rollback()
         print(f"❌ [LỖI ADD EPISODE]: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 # 3. CẬP NHẬT TRẠNG THÁI VÀ TỔNG SỐ TẬP PHIM
 @router.patch("/{movie_id}", summary="3. Cập nhật Trạng thái và Tổng số tập phim")
 async def update_movie_status_and_total(
