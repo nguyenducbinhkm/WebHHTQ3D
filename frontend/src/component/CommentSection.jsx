@@ -50,12 +50,23 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
     }
   };
 
+  // Link avatar mặc định nếu user chưa có ảnh
+  const defaultAvatar = "https://via.placeholder.com/150";
+
   return (
     <div className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50 space-y-2">
+      {/* Thông tin user: Avatar tròn + Tên + Thời gian */}
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-red-400 text-sm">
-          {comment.username}
-        </span>
+        <div className="flex items-center gap-2.5">
+          <img
+            src={comment.avatar_url || comment.avatar || defaultAvatar}
+            alt={comment.username}
+            className="w-7 h-7 rounded-full object-cover border border-gray-600"
+          />
+          <span className="font-semibold text-red-400 text-sm">
+            {comment.username}
+          </span>
+        </div>
         <span className="text-xs text-gray-400">
           {new Date(comment.created_at).toLocaleDateString("vi-VN", {
             hour: "2-digit",
@@ -67,12 +78,12 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
         </span>
       </div>
 
-      <p className="text-gray-200 text-sm whitespace-pre-line">
+      <p className="text-gray-200 text-sm whitespace-pre-line pl-9">
         {comment.content}
       </p>
 
       {/* Thanh tương tác: Tym & Trả lời */}
-      <div className="flex items-center gap-4 text-xs text-gray-400 pt-1">
+      <div className="flex items-center gap-4 text-xs text-gray-400 pt-1 pl-9">
         <button
           onClick={handleLike}
           className="flex items-center gap-1 hover:text-red-500 transition"
@@ -94,7 +105,7 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
       {showReplyBox && (
         <form
           onSubmit={handleSendReply}
-          className="mt-3 pl-4 border-l-2 border-sky-500 space-y-2"
+          className="mt-3 pl-9 border-l-2 border-sky-500 space-y-2"
         >
           <textarea
             rows="2"
@@ -130,8 +141,17 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
               key={reply.id}
               className="bg-gray-900/50 p-3 rounded-md text-xs space-y-1"
             >
-              <div className="flex justify-between font-semibold text-sky-400">
-                <span>{reply.username}</span>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={reply.avatar_url || reply.avatar || defaultAvatar}
+                    alt={reply.username}
+                    className="w-6 h-6 rounded-full object-cover border border-gray-700"
+                  />
+                  <span className="font-semibold text-sky-400">
+                    {reply.username}
+                  </span>
+                </div>
                 <span className="text-gray-500 font-normal">
                   {new Date(reply.created_at).toLocaleDateString("vi-VN", {
                     hour: "2-digit",
@@ -141,7 +161,7 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
                   })}
                 </span>
               </div>
-              <p className="text-gray-300">{reply.content}</p>
+              <p className="text-gray-300 pl-8">{reply.content}</p>
             </div>
           ))}
         </div>
@@ -253,6 +273,7 @@ export default function CommentSection({ movieId }) {
               key={comment.id}
               comment={comment}
               movieId={movieId}
+              onActionSummary={() => {}}
               onActionSuccess={() => fetchComments(page)}
             />
           ))

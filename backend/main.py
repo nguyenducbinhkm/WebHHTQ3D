@@ -122,6 +122,7 @@ def get_movies(db: Session = Depends(get_db)):
             m.status, 
             m.views_count,
             m.total_ep,
+            m.is_banner,  -- <--- BỔ SUNG TRƯỜNG NÀY VÀO ĐÂY
             (SELECT COUNT(*) FROM episodes e WHERE e.movie_id = m.id) AS current_ep
         FROM movies m
         ORDER BY m.created_at DESC
@@ -149,7 +150,7 @@ def get_movies(db: Session = Depends(get_db)):
 @app.get("/api/movies/{slug}")
 def get_movie_detail(slug: str, db: Session = Depends(get_db)):
     movie_query = text("""
-        SELECT m.id, m.title, m.slug, m.description, m.poster_url, m.backdrop_url, m.status, m.views_count, m.release_day
+        SELECT m.id, m.title, m.slug, m.description, m.poster_url, m.backdrop_url, m.status, m.views_count, m.release_day, m.rating, m.vote_count
         FROM movies m
         WHERE m.slug = :slug
     """)

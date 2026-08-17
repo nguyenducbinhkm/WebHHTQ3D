@@ -69,8 +69,17 @@ const Banner = () => {
     };
   }, []);
 
-  // Chỉ hiển thị đúng 5 ảnh
-  const displayMovies = useMemo(() => movies.slice(0, 5), [movies]);
+  // Lọc chỉ lấy các phim có is_banner là true và giới hạn tối đa đúng 5 phim
+  // Lọc lấy các phim có is_banner là true (hỗ trợ cả boolean, string 'true', hoặc số 1)
+  const displayMovies = useMemo(() => {
+    return movies
+      .filter((movie) => {
+        const val = movie.is_banner;
+        return val === true || val === "true" || val === "TRUE" || val === 1;
+      })
+      .slice(0, 5);
+  }, [movies]);
+
   const total = displayMovies.length;
 
   // tránh % âm

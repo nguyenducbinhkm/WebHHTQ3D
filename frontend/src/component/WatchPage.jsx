@@ -46,6 +46,8 @@ function WatchPage() {
     Promise.all([fetchDetail, fetchAll])
       .then(([detailRes, allRes]) => {
         const movie = detailRes.data;
+        console.log("DỮ LIỆU PHIM TỪ API:", movie);
+
         setMovieData(movie);
         setAllMovies(allRes.data || []);
         setLoading(false);
@@ -192,6 +194,24 @@ function WatchPage() {
     movieData?.schedule ||
     movieData?.movie_info?.schedule ||
     "Đang cập nhật";
+  // 6. Lấy Đánh giá (Rating) & Số lượt bình chọn (Vote Count) từ movie_info chính xác
+  const rawRating =
+    movieData?.movie_info?.rating ??
+    movieData?.rating ??
+    movieData?.movie_info?.vote_average ??
+    movieData?.vote_average ??
+    0;
+
+  const ratingScore = Number(rawRating || 0).toFixed(1);
+
+  const rawVoteCount =
+    movieData?.movie_info?.vote_count ??
+    movieData?.vote_count ??
+    movieData?.movie_info?.total_vote ??
+    movieData?.total_vote ??
+    0;
+
+  const voteCountStr = Number(rawVoteCount || 0).toLocaleString();
 
   const formatReleaseDay = (day) => {
     if (!day) return "Đang cập nhật";
@@ -326,7 +346,7 @@ function WatchPage() {
                   </p>
                 </div>
 
-                {/* Đánh giá sao */}
+                {/* Đánh giá sao (Lấy dữ liệu động từ cột rating & vote_count của Database) */}
                 <div className="flex items-center gap-2 bg-[#222] px-3 py-1.5 rounded-lg border border-gray-700">
                   <div className="flex text-yellow-400">
                     {[...Array(5)].map((_, i) => (
@@ -334,9 +354,9 @@ function WatchPage() {
                     ))}
                   </div>
                   <span className="text-sm font-bold text-gray-200">
-                    4.3/5{" "}
+                    {ratingScore}/5{" "}
                     <span className="text-xs text-gray-400 font-normal">
-                      (10353 bình chọn)
+                      ({voteCountStr} bình chọn)
                     </span>
                   </span>
                 </div>

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, DateTime, Table
+from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, DateTime, Table, Float, Boolean
 from sqlalchemy.orm import relationship, backref
 from database import Base
 import datetime
@@ -32,9 +32,15 @@ class Movie(Base):
     process_status = Column(Enum('pending', 'processing', 'completed', 'failed'), default='pending')
     progress = Column(Integer, default=0)
     views_count = Column(Integer, default=0)
+    rating = Column(Float, default=0.0)      
+    vote_count = Column(Integer, default=0)
     stream_url = Column(String(550), nullable=True)
     release_day = Column(String(50), nullable=True, default='tue')
     total_ep = Column(Integer, default=0) 
+    
+    # Trường bổ sung để quản lý hiển thị 5 phim lên Banner
+    is_banner = Column(Boolean, default=False)
+    
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Quan hệ tới bảng episodes
