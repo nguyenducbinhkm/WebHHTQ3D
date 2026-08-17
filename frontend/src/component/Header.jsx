@@ -13,7 +13,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Login from "./Login";
-import ProfileModal from "./ProfileModal"; // Import component ProfileModal
+import ProfileModal from "./ProfileModal";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -23,7 +23,7 @@ const Header = () => {
   const menuRef = useRef(null);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false); // State quản lý ProfileModal
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Trạng thái user và menu dropdown avatar
   const [user, setUser] = useState(null);
@@ -35,18 +35,18 @@ const Header = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // State để điều khiển hiển thị thanh tìm kiếm riêng ở dưới trên mobile khi bấm nút kính núp
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // Kiểm tra trạng thái đăng nhập từ localStorage khi load trang hoặc F5
+  // Đọc thông tin user từ localStorage khi load trang hoặc F5
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         console.error("Lỗi đọc dữ liệu user từ localStorage:", e);
       }
@@ -118,13 +118,12 @@ const Header = () => {
     }
   };
 
-  // Hàm xử lý Đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     setUser(null);
     setIsOpenUserMenu(false);
-    window.location.reload(); // Làm mới trang để cập nhật lại giao diện hoàn toàn
+    window.location.reload();
   };
 
   const categoryColors = [
@@ -194,7 +193,7 @@ const Header = () => {
           </Link>
         </div>
 
-        {/* Ở giữa: Thanh tìm kiếm đầy đủ cho Desktop (từ md trở lên) */}
+        {/* Ở giữa: Thanh tìm kiếm cho Desktop */}
         <div className="hidden md:block flex-1 max-w-[550px] mx-6 relative">
           <form
             onSubmit={handleSearchSubmit}
@@ -231,9 +230,8 @@ const Header = () => {
           </form>
         </div>
 
-        {/* Bên phải: Nút kính núp (Mobile), Lịch sử, Yêu thích + Khu vực tài khoản */}
+        {/* Bên phải: Tiện ích & Tài khoản */}
         <div className="flex items-center space-x-2.5 md:space-x-4 shrink-0">
-          {/* Nút kính núp chỉ hiện trên Mobile trên thanh header */}
           <button
             type="button"
             onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
@@ -265,7 +263,7 @@ const Header = () => {
             </span>
           </Link>
 
-          {/* XỬ LÝ HIỂN THỊ AVATAR HOẶC NÚT ĐĂNG NHẬP DỰA TRÊN TRẠNG THÁI USER */}
+          {/* AVATAR HOẶC NÚT ĐĂNG NHẬP */}
           {user ? (
             <div className="relative ml-1" ref={userMenuRef}>
               <div
@@ -273,9 +271,8 @@ const Header = () => {
                 className="w-8 h-8 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-sky-400/80 cursor-pointer hover:opacity-90 transition shadow-md shrink-0 flex items-center justify-center bg-gray-800"
                 title={user.username || "Tài khoản của tôi"}
               >
-                {/* HIỂN THỊ ẢNH ĐẠI DIỆN THỰC TẾ TỪ USER HOẶC /avatar.png */}
                 <img
-                  src={user.avatar_url || "/avatar.png"}
+                  src={user.avatar || user.avatar_url || "/avatar.png"}
                   alt="User Avatar"
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -285,7 +282,6 @@ const Header = () => {
                 />
               </div>
 
-              {/* Dropdown Menu khi ấn vào Avatar */}
               {isOpenUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-[#1a1c20] border border-gray-700 rounded-lg shadow-2xl py-2 z-50 text-white">
                   <div className="px-4 py-2 text-xs text-gray-400 border-b border-gray-700/80">
@@ -295,7 +291,6 @@ const Header = () => {
                     </span>
                   </div>
 
-                  {/* Nút mở ProfileModal */}
                   <button
                     onClick={() => {
                       setIsOpenUserMenu(false);
@@ -328,7 +323,7 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Ô tìm kiếm riêng biệt ở dưới chỉ hiện trên mobile KHI người dùng bấm vào nút kính núp */}
+      {/* Ô tìm kiếm mobile */}
       {isMobileSearchOpen && (
         <div className="block md:hidden bg-[#1c1e22] px-3 py-2 border-t border-gray-800 relative">
           <form
@@ -365,7 +360,7 @@ const Header = () => {
         </div>
       )}
 
-      {/* Dropdown kết quả tìm kiếm (Dùng chung cho cả Mobile và Desktop) */}
+      {/* Dropdown tìm kiếm */}
       {showDropdown && (
         <div className="absolute top-full left-0 right-0 bg-[#1a1c20] border border-gray-700 rounded-b shadow-2xl overflow-hidden z-50 max-h-[420px] overflow-y-auto">
           {isSearching ? (
@@ -419,7 +414,7 @@ const Header = () => {
         </div>
       )}
 
-      {/* Component Modal Đăng Nhập */}
+      {/* Modal Đăng Nhập */}
       <Login
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
@@ -432,7 +427,7 @@ const Header = () => {
         }}
       />
 
-      {/* Component Modal Thông Tin Cá Nhân */}
+      {/* Modal Thông Tin Cá Nhân */}
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}

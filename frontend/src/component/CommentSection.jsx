@@ -53,8 +53,9 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
     }
   };
 
-  // Link avatar mặc định nếu user chưa có ảnh
-  const defaultAvatar = "https://via.placeholder.com/150";
+  // Link avatar mặc định mới theo yêu cầu
+  const defaultAvatar =
+    "https://i.pinimg.com/originals/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg";
 
   // Hàm helper để lấy avatar chuẩn (ưu tiên dữ liệu từ comment, nếu trùng user hiện tại lấy từ localStorage, không thì dùng mặc định)
   const getAvatar = (item) => {

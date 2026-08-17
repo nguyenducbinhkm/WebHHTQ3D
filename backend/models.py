@@ -71,10 +71,10 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    avatar_url = Column(String(500), nullable=True)  # <--- THÊM DÒNG NÀY VÀO ĐÂY
     role = Column(Enum('user', 'admin'), default='user')
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    # Quan hệ tới bảng comments (Tự động xóa bình luận nếu tài khoản user bị xóa)
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
 
 class Comment(Base):

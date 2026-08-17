@@ -59,7 +59,7 @@ export default function Login({ isOpen, onClose, onLoginSuccess }) {
         throw new Error(data.detail || "Đăng nhập thất bại!");
       }
 
-      // Giải mã JWT token ngầm để lấy user id nếu backend không trả về trực tiếp data.id
+      // 1. Lấy hoặc giải mã user ID
       let userId = data.id || data.user_id;
       if (!userId && data.access_token) {
         try {
@@ -80,14 +80,33 @@ export default function Login({ isOpen, onClose, onLoginSuccess }) {
         }
       }
 
-      // Lưu Token và thông tin user (có kèm id) vào localStorage
+      // 2. Lấy avatar từ response (nếu có), nếu chưa có thì fetch từ profile API phòng hờ
+      let userAvatar = data.avatar || "";
+      if (!userAvatar && data.access_token) {
+        try {
+          const profileRes = await fetch(
+            `${API_URL}/api/users/profile/${loginData.username}`,
+            {
+              headers: { Authorization: `Bearer ${data.access_token}` },
+            },
+          );
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            userAvatar = profileData.avatar || "";
+          }
+        } catch (err) {
+          console.log("Không thể fetch thêm avatar:", err);
+        }
+      }
+
+      // Lưu Token và thông tin user chuẩn vào localStorage
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem(
         "user",
         JSON.stringify({
-          id: userId || 1, // Fallback an toàn nếu vẫn không tìm thấy id
+          id: userId || 1,
           username: loginData.username,
-          avatar: data.avatar || "",
+          avatar: userAvatar, // Avatar chuẩn đã được lưu giữ
         }),
       );
 

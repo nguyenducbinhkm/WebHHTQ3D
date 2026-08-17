@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from database import get_db
 from models import Comment, Movie
 from pydantic import BaseModel
@@ -14,21 +14,23 @@ class CommentCreate(BaseModel):
     content: str
     parent_id: Optional[int] = None
 
-# Hàm đệ quy hoặc xử lý phụ để gom nhóm các câu trả lời con (replies)
+# Hàm đệ quy hoặc xử lý phụ để gom nhóm các câu trả lời con (replies) kèm avatar
 def format_comment(c):
     return {
         "id": c.id,
         "content": c.content,
         "created_at": c.created_at,
         "username": c.user.username if c.user else "Ẩn danh",
+        "avatar_url": c.user.avatar_url if c.user else "", # Bình luận gốc có
         "parent_id": c.parent_id,
-        "likes_count": getattr(c, "likes_count", 0), # Tránh lỗi nếu db chưa có cột này
+        "likes_count": getattr(c, "likes_count", 0), 
         "replies": [
             {
                 "id": r.id,
                 "content": r.content,
                 "created_at": r.created_at,
                 "username": r.user.username if r.user else "Ẩn danh",
+                "avatar_url": r.user.avatar_url if r.user else "", # Đã bổ sung avatar cho phản hồi con
                 "parent_id": r.parent_id,
                 "likes_count": getattr(r, "likes_count", 0)
             } for r in sorted(c.replies, key=lambda x: x.created_at)
@@ -45,8 +47,15 @@ def get_movie_comments(
 ):
     skip = (page - 1) * limit
     
-    # Chỉ lấy các bình luận gốc (parent_id IS NULL) để phân trang cho mượt
-    query = db.query(Comment).filter(Comment.movie_id == movie_id, Comment.parent_id == None)
+    # Sử dụng joinedload để ép nạp sẵn thông tin user cho cả comment chính và replies cấp con
+    query = (
+        db.query(Comment)
+        .options(
+            joinedload(Comment.user),
+            joinedload(Comment.replies).joinedload(Comment.user)
+        )
+        .filter(Comment.movie_id == movie_id, Comment.parent_id == None)
+    )
     total = query.count()
     
     comments = query.order_by(Comment.created_at.desc()).offset(skip).limit(limit).all()

@@ -26,7 +26,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return {"message": "Đăng ký thành công!", "username": new_user.username}
 
-@router.post("/login") # Bỏ response_model=Token cứng nhắc để có thể trả về thêm id và avatar
+@router.post("/login")
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == user_data.username).first()
     
@@ -36,14 +36,13 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             detail="Tên đăng nhập hoặc mật khẩu không chính xác!",
         )
 
-    # Đưa thêm id (kiểu số nguyên) vào data của token
     access_token = create_access_token(data={"sub": user.username, "id": user.id, "role": user.role})
     
-    # Trả về đầy đủ access_token, id và avatar để frontend nhận được ngay lập tức
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "id": user.id,          # <--- Trả về ID thật dạng số của user
+        "id": user.id, 
         "username": user.username,
-        "avatar": getattr(user, "avatar", "") # Trả về avatar nếu model User có trường này
+        "avatar": user.avatar_url if user.avatar_url else "" # <--- Lấy từ user.avatar_url vừa thêm vào model
     }
+    
