@@ -1,58 +1,210 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import axios from "axios";
+import { FaHeart, FaRegHeart, FaReply } from "react-icons/fa";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-const CommentSection = ({ movieId }) => {
+const CommentItem = ({ comment, movieId, onActionSuccess }) => {
+  const [likes, setLikes] = useState(comment.likes_count || 0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [showReplyBox, setShowReplyBox] = useState(false);
+  const [replyContent, setReplyContent] = useState("");
+
+  // Xử lý thả tym / hủy tym
+  const handleLike = async () => {
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/comments/${comment.id}/like`,
+      );
+      setLikes(res.data.likes_count);
+      setIsLiked(!isLiked);
+    } catch (error) {
+      console.error("Lỗi thả tym:", error);
+    }
+  };
+
+  // Xử lý gửi trả lời bình luận
+  const handleSendReply = async (e) => {
+    e.preventDefault();
+    if (!replyContent.trim()) return;
+
+    try {
+      const token = localStorage.getItem("access_token");
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      };
+
+      await axios.post(
+        `${API_URL}/api/movies/${movieId}/comments`,
+        { content: replyContent, parent_id: comment.id },
+        { headers },
+      );
+
+      setReplyContent("");
+      setShowReplyBox(false);
+      onActionSuccess(); // Load lại danh sách bình luận
+    } catch (error) {
+      alert(error.response?.data?.detail || "Lỗi khi gửi phản hồi!");
+    }
+  };
+
+  return (
+    <div className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-red-400 text-sm">
+          {comment.username}
+        </span>
+        <span className="text-xs text-gray-400">
+          {new Date(comment.created_at).toLocaleDateString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}
+        </span>
+      </div>
+
+      <p className="text-gray-200 text-sm whitespace-pre-line">
+        {comment.content}
+      </p>
+
+      {/* Thanh tương tác: Tym & Trả lời */}
+      <div className="flex items-center gap-4 text-xs text-gray-400 pt-1">
+        <button
+          onClick={handleLike}
+          className="flex items-center gap-1 hover:text-red-500 transition"
+        >
+          {isLiked ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
+          <span>{likes}</span>
+        </button>
+
+        <button
+          onClick={() => setShowReplyBox(!showReplyBox)}
+          className="flex items-center gap-1 hover:text-sky-400 transition"
+        >
+          <FaReply />
+          <span>Trả lời</span>
+        </button>
+      </div>
+
+      {/* Ô nhập phản hồi */}
+      {showReplyBox && (
+        <form
+          onSubmit={handleSendReply}
+          className="mt-3 pl-4 border-l-2 border-sky-500 space-y-2"
+        >
+          <textarea
+            rows="2"
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            placeholder={`Phản hồi ${comment.username}...`}
+            className="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500 resize-none"
+            required
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowReplyBox(false)}
+              className="px-3 py-1 bg-gray-700 text-xs rounded hover:bg-gray-600 transition"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className="px-3 py-1 bg-sky-500 text-xs rounded hover:bg-sky-600 font-semibold transition"
+            >
+              Gửi
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Hiển thị các câu trả lời con (nested replies) */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="mt-3 pl-6 border-l border-gray-700 space-y-3">
+          {comment.replies.map((reply) => (
+            <div
+              key={reply.id}
+              className="bg-gray-900/50 p-3 rounded-md text-xs space-y-1"
+            >
+              <div className="flex justify-between font-semibold text-sky-400">
+                <span>{reply.username}</span>
+                <span className="text-gray-500 font-normal">
+                  {new Date(reply.created_at).toLocaleDateString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "2-digit",
+                  })}
+                </span>
+              </div>
+              <p className="text-gray-300">{reply.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+CommentItem.propTypes = {
+  comment: PropTypes.object.isRequired,
+  movieId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  onActionSuccess: PropTypes.func.isRequired,
+};
+
+export default function CommentSection({ movieId }) {
   const [comments, setComments] = useState([]);
   const [newContent, setNewContent] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 1. Lấy danh sách bình luận khi component được load hoặc movieId thay đổi
-  useEffect(() => {
+  // States phân trang
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchComments = async (currentPage = 1) => {
     if (!movieId) return;
-    const fetchComments = async () => {
-      try {
-        const response = await axios.get(
-          `${API_URL}/api/movies/${movieId}/comments`,
-        );
-        setComments(response.data);
-      } catch (error) {
-        console.error("Lỗi khi tải bình luận:", error);
-      }
-    };
-    fetchComments();
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/movies/${movieId}/comments?page=${currentPage}&limit=5`,
+      );
+      setComments(res.data.comments);
+      setTotalPages(res.data.total_pages);
+      setPage(res.data.page);
+    } catch (error) {
+      console.error("Lỗi tải bình luận:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments(1);
   }, [movieId]);
 
-  // 2. Gửi bình luận mới
+  // Gửi bình luận gốc mới
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     if (!newContent.trim()) return;
 
     setLoading(true);
     try {
-      // Lấy token đăng nhập từ localStorage (nếu có) để xác thực người dùng thật
       const token = localStorage.getItem("access_token");
-      const headers = { "Content-Type": "application/json" };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      };
 
       await axios.post(
-        `${API_URL}/api/movies/${movieId}/comments?content=${encodeURIComponent(newContent)}`,
-        {},
+        `${API_URL}/api/movies/${movieId}/comments`,
+        { content: newContent, parent_id: null },
         { headers },
       );
 
-      setNewContent(""); // Xóa ô nhập
-      // Tải lại danh sách bình luận ngay lập tức
-      const response = await axios.get(
-        `${API_URL}/api/movies/${movieId}/comments`,
-      );
-      setComments(response.data);
+      setNewContent("");
+      fetchComments(1); // Tải lại danh sách ở trang đầu tiên
     } catch (error) {
-      console.error("Lỗi khi gửi bình luận:", error);
       alert(
         error.response?.data?.detail || "Có lỗi xảy ra khi đăng bình luận!",
       );
@@ -64,10 +216,10 @@ const CommentSection = ({ movieId }) => {
   return (
     <div className="mt-8 bg-gray-900 p-6 rounded-xl text-white shadow-lg">
       <h3 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">
-        Bình luận ({comments.length})
+        Bình luận
       </h3>
 
-      {/* Form viết bình luận */}
+      {/* Form viết bình luận gốc */}
       <form onSubmit={handleSubmitComment} className="mb-6">
         <textarea
           rows="3"
@@ -97,37 +249,42 @@ const CommentSection = ({ movieId }) => {
           </p>
         ) : (
           comments.map((comment) => (
-            <div
+            <CommentItem
               key={comment.id}
-              className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-red-400 text-sm">
-                  {comment.username}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {new Date(comment.created_at).toLocaleDateString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              <p className="text-gray-200 text-sm mt-1 whitespace-pre-line">
-                {comment.content}
-              </p>
-            </div>
+              comment={comment}
+              movieId={movieId}
+              onActionSuccess={() => fetchComments(page)}
+            />
           ))
         )}
       </div>
+
+      {/* Thanh phân trang */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3 mt-6">
+          <button
+            disabled={page === 1}
+            onClick={() => fetchComments(page - 1)}
+            className="px-3 py-1 bg-gray-800 rounded text-xs disabled:opacity-40 hover:bg-gray-700 transition"
+          >
+            Trang trước
+          </button>
+          <span className="text-xs text-gray-400">
+            Trang {page} / {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => fetchComments(page + 1)}
+            className="px-3 py-1 bg-gray-800 rounded text-xs disabled:opacity-40 hover:bg-gray-700 transition"
+          >
+            Trang sau
+          </button>
+        </div>
+      )}
     </div>
   );
-};
+}
 
 CommentSection.propTypes = {
   movieId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
-
-export default CommentSection;

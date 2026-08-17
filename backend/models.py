@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, DateTime, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from database import Base
 import datetime
 
@@ -78,8 +78,19 @@ class Comment(Base):
     content = Column(Text, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    
+    # Các trường bổ sung hỗ trợ Trả lời bình luận và Thả tym
+    parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
+    likes_count = Column(Integer, default=0)
+    
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    # Thiết lập liên kết ngược lại với User và Movie
+    # Thiết lập liên kết ngược lại với User, Movie và quan hệ đệ quy replies
     user = relationship("User", back_populates="comments")
     movie = relationship("Movie", back_populates="comments")
+    
+    replies = relationship(
+        "Comment", 
+        backref=backref("parent", remote_side=[id]), 
+        cascade="all, delete-orphan"
+    )
