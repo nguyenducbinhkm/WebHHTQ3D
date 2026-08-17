@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // Hoặc dùng fetch tuỳ project của bạn
+import PropTypes from "prop-types";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const CommentSection = ({ movieId }) => {
   const [comments, setComments] = useState([]);
@@ -12,7 +15,7 @@ const CommentSection = ({ movieId }) => {
     const fetchComments = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/api/movies/${movieId}/comments`,
+          `${API_URL}/api/movies/${movieId}/comments`,
         );
         setComments(response.data);
       } catch (error) {
@@ -29,20 +32,30 @@ const CommentSection = ({ movieId }) => {
 
     setLoading(true);
     try {
-      // Lưu ý: Sau này khi có token đăng nhập, bạn cần đính kèm Header Authorization Bearer token
+      // Lấy token đăng nhập từ localStorage (nếu có) để xác thực người dùng thật
+      const token = localStorage.getItem("access_token");
+      const headers = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       await axios.post(
-        `http://localhost:8000/api/movies/${movieId}/comments?content=${encodeURIComponent(newContent)}`,
+        `${API_URL}/api/movies/${movieId}/comments?content=${encodeURIComponent(newContent)}`,
+        {},
+        { headers },
       );
 
       setNewContent(""); // Xóa ô nhập
       // Tải lại danh sách bình luận ngay lập tức
       const response = await axios.get(
-        `http://localhost:8000/api/movies/${movieId}/comments`,
+        `${API_URL}/api/movies/${movieId}/comments`,
       );
       setComments(response.data);
     } catch (error) {
       console.error("Lỗi khi gửi bình luận:", error);
-      alert("Có lỗi xảy ra khi đăng bình luận!");
+      alert(
+        error.response?.data?.detail || "Có lỗi xảy ra khi đăng bình luận!",
+      );
     } finally {
       setLoading(false);
     }
@@ -111,6 +124,10 @@ const CommentSection = ({ movieId }) => {
       </div>
     </div>
   );
+};
+
+CommentSection.propTypes = {
+  movieId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 export default CommentSection;
