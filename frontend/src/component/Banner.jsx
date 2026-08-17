@@ -206,10 +206,14 @@ const Banner = () => {
 
               {/* ============ DESKTOP / TABLET CONTENT ============ */}
               <div className="hidden md:flex relative max-w-[1650px] mx-auto h-full px-6 md:px-12 items-center justify-between z-10 pb-20">
-                <div className="max-w-2xl space-y-5 self-start mt-[60px]">
+                {/* Tự động tăng mt lên [90px] khi tên phim ngắn (1 dòng) để đẩy toàn bộ cụm xuống thấp hơn */}
+                <div
+                  className={`max-w-2xl flex flex-col space-y-4 self-start ${title && title.length <= 15 ? "mt-[90px]" : "mt-[55px]"}`}
+                >
+                  {/* Tiêu đề & Tên tiếng Anh */}
                   <div>
                     <h1
-                      className="text-5xl lg:text-7xl xl:text-8xl font-bold tracking-wide leading-relaxed text-amber-300 py-2 drop-shadow-2xl"
+                      className="text-5xl lg:text-7xl xl:text-8xl font-bold tracking-wide leading-tight text-amber-300 py-1 drop-shadow-2xl mb-2"
                       style={{
                         fontFamily: "'Charm', cursive",
                         textShadow:
@@ -225,7 +229,8 @@ const Banner = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-1.5 text-amber-400 text-xl">
+                  {/* Đánh giá sao */}
+                  <div className="flex items-center space-x-1.5 text-amber-400 text-xl ">
                     <FaStar />
                     <FaStar />
                     <FaStar />
@@ -233,7 +238,8 @@ const Banner = () => {
                     <FaStarHalfAlt />
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  {/* Nhãn tập, năm, chất lượng và Thể loại chung một hàng */}
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <span className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded shadow-md">
                       {episodeLabel}
                     </span>
@@ -243,9 +249,7 @@ const Banner = () => {
                     <span className="border border-gray-600 text-gray-300 text-sm font-semibold px-3 py-1 rounded bg-black/50 backdrop-blur-sm">
                       {quality}
                     </span>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2.5 pt-1">
                     {categoriesList.length > 0 ? (
                       categoriesList.map((item, idx) => {
                         const catName =
@@ -266,24 +270,28 @@ const Banner = () => {
                           <Link
                             key={idx}
                             to={`/the-loai/${catSlug}`}
-                            className={`text-xs md:text-sm px-3.5 py-1.5 rounded-lg border backdrop-blur-sm font-semibold transition duration-200 ${colorClass}`}
+                            className={`text-xs md:text-sm px-3.5 py-1 rounded-lg border backdrop-blur-sm font-semibold transition duration-200 ${colorClass}`}
                           >
                             {displayTitle}
                           </Link>
                         );
                       })
                     ) : (
-                      <span className="text-sky-400 border-sky-500/40 bg-sky-500/10 text-xs md:text-sm px-3.5 py-1.5 rounded-lg border backdrop-blur-sm font-semibold">
+                      <span className="text-sky-400 border-sky-500/40 bg-sky-500/10 text-xs md:text-sm px-3.5 py-1 rounded-lg border backdrop-blur-sm font-semibold">
                         3D Donghua
                       </span>
                     )}
                   </div>
 
-                  <p className="text-gray-300 text-sm md:text-base leading-relaxed line-clamp-4 max-w-xl opacity-90">
-                    {description}
+                  {/* Mô tả phim */}
+                  <p className="text-white text-sm md:text-base leading-relaxed line-clamp-4 max-w-[400px] text-justify pt-1">
+                    {description && description.length > 180
+                      ? `${description.substring(0, 180).trim()}...`
+                      : description}
                   </p>
 
-                  <div className="flex items-center gap-5 pt-3">
+                  {/* Nút hành động */}
+                  <div className="flex items-center gap-5 pt-2">
                     <Link
                       to={`/watch/${slug}`}
                       className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-xl transition transform hover:scale-105 active:scale-95 shrink-0"
@@ -318,6 +326,7 @@ const Banner = () => {
                   </div>
                 </div>
 
+                {/* Poster bên phải */}
                 <div className="hidden lg:block self-start mt-[28px] w-[360px] h-[420px] xl:w-[320px] xl:h-[490px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 shrink-0">
                   <img
                     src={posterUrl}
