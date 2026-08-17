@@ -11,7 +11,7 @@ from sqlalchemy import text
 from database import get_db
 
 # IMPORT CÁC ROUTER (admin_movies, auth, comments)
-from routers import admin_movies, auth, comments
+from routers import admin_movies, auth, comments, user 
 
 app = FastAPI(title="Movie 3D Donghua API")
 
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(admin_movies.router)
 app.include_router(auth.router)
 app.include_router(comments.router)  # <--- ĐÃ THÊM ROUTER COMMENTS TẠI ĐÂY
+app.include_router(user.router)
 
 @app.get("/")
 def home():

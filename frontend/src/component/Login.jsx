@@ -59,11 +59,36 @@ export default function Login({ isOpen, onClose, onLoginSuccess }) {
         throw new Error(data.detail || "Đăng nhập thất bại!");
       }
 
-      // Lưu Token và thông tin user vào localStorage để Header nhận diện và giữ trạng thái khi F5
+      // Giải mã JWT token ngầm để lấy user id nếu backend không trả về trực tiếp data.id
+      let userId = data.id || data.user_id;
+      if (!userId && data.access_token) {
+        try {
+          const base64Url = data.access_token.split(".")[1];
+          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+          const jsonPayload = decodeURIComponent(
+            atob(base64)
+              .split("")
+              .map(function (c) {
+                return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+              })
+              .join(""),
+          );
+          const payload = JSON.parse(jsonPayload);
+          userId = payload.id || payload.sub || payload.user_id;
+        } catch (err) {
+          console.error("Không thể giải mã token:", err);
+        }
+      }
+
+      // Lưu Token và thông tin user (có kèm id) vào localStorage
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem(
         "user",
-        JSON.stringify({ username: loginData.username }),
+        JSON.stringify({
+          id: userId || 1, // Fallback an toàn nếu vẫn không tìm thấy id
+          username: loginData.username,
+          avatar: data.avatar || "",
+        }),
       );
 
       if (loginData.rememberMe) {

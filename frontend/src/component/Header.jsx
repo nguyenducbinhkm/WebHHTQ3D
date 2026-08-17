@@ -8,10 +8,12 @@ import {
   FaSpinner,
   FaTimes,
   FaPlayCircle,
+  FaUser,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Login from "./Login";
+import ProfileModal from "./ProfileModal"; // Import component ProfileModal
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -21,6 +23,7 @@ const Header = () => {
   const menuRef = useRef(null);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false); // State quản lý ProfileModal
 
   // Trạng thái user và menu dropdown avatar
   const [user, setUser] = useState(null);
@@ -270,13 +273,14 @@ const Header = () => {
                 className="w-8 h-8 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-sky-400/80 cursor-pointer hover:opacity-90 transition shadow-md shrink-0 flex items-center justify-center bg-gray-800"
                 title={user.username || "Tài khoản của tôi"}
               >
+                {/* HIỂN THỊ ẢNH ĐẠI DIỆN THỰC TẾ TỪ USER HOẶC /avatar.png */}
                 <img
-                  src="/avatar.png"
+                  src={user.avatar_url || "/avatar.png"}
                   alt="User Avatar"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = "https://via.placeholder.com/150"; // Ảnh dự phòng nếu k tìm thấy /avatar.png
+                    e.target.src = "/avatar.png";
                   }}
                 />
               </div>
@@ -290,9 +294,22 @@ const Header = () => {
                       {user.username || "Thành viên"}
                     </span>
                   </div>
+
+                  {/* Nút mở ProfileModal */}
+                  <button
+                    onClick={() => {
+                      setIsOpenUserMenu(false);
+                      setIsProfileOpen(true);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-[#2a2d34] transition flex items-center space-x-2.5 font-medium"
+                  >
+                    <FaUser className="text-sky-400 text-xs" />
+                    <span>Thông tin cá nhân</span>
+                  </button>
+
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-[#2a2d34] transition flex items-center space-x-2 font-medium"
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-[#2a2d34] transition flex items-center space-x-2 font-medium border-t border-gray-700/50 mt-1 pt-2"
                   >
                     <span>🚪</span>
                     <span>Đăng xuất</span>
@@ -407,7 +424,6 @@ const Header = () => {
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={() => {
-          // Khi đăng nhập thành công từ Modal, đọc lại thông tin user từ localStorage và load lại giao diện
           const storedUser = localStorage.getItem("user");
           if (storedUser) {
             setUser(JSON.parse(storedUser));
@@ -415,9 +431,19 @@ const Header = () => {
           window.location.reload();
         }}
       />
+
+      {/* Component Modal Thông Tin Cá Nhân */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        user={user}
+        onUpdateSuccess={(updatedUser) => {
+          setUser(updatedUser);
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }}
+      />
     </div>
   );
 };
 
-Header.export = Header;
 export default Header;

@@ -11,6 +11,9 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyContent, setReplyContent] = useState("");
 
+  // Lấy thông tin user hiện tại từ localStorage để dự phòng hiển thị avatar nếu trùng khớp
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
   // Xử lý thả tym / hủy tym
   const handleLike = async () => {
     try {
@@ -53,13 +56,27 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
   // Link avatar mặc định nếu user chưa có ảnh
   const defaultAvatar = "https://via.placeholder.com/150";
 
+  // Hàm helper để lấy avatar chuẩn (ưu tiên dữ liệu từ comment, nếu trùng user hiện tại lấy từ localStorage, không thì dùng mặc định)
+  const getAvatar = (item) => {
+    if (item.avatar_url) return item.avatar_url;
+    if (item.avatar) return item.avatar;
+    if (
+      currentUser &&
+      currentUser.username === item.username &&
+      currentUser.avatar
+    ) {
+      return currentUser.avatar;
+    }
+    return defaultAvatar;
+  };
+
   return (
     <div className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50 space-y-2">
       {/* Thông tin user: Avatar tròn + Tên + Thời gian */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <img
-            src={comment.avatar_url || comment.avatar || defaultAvatar}
+            src={getAvatar(comment)}
             alt={comment.username}
             className="w-7 h-7 rounded-full object-cover border border-gray-600"
           />
@@ -144,7 +161,7 @@ const CommentItem = ({ comment, movieId, onActionSuccess }) => {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <img
-                    src={reply.avatar_url || reply.avatar || defaultAvatar}
+                    src={getAvatar(reply)}
                     alt={reply.username}
                     className="w-6 h-6 rounded-full object-cover border border-gray-700"
                   />
@@ -273,7 +290,6 @@ export default function CommentSection({ movieId }) {
               key={comment.id}
               comment={comment}
               movieId={movieId}
-              onActionSummary={() => {}}
               onActionSuccess={() => fetchComments(page)}
             />
           ))
