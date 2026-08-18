@@ -9,6 +9,7 @@ function AdminMoviesPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [savingBanner, setSavingBanner] = useState(false);
+  const [savingRanking, setSavingRanking] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   // State quản lý Modal chỉnh sửa nội dung (Description)
@@ -24,7 +25,19 @@ function AdminMoviesPage() {
         : `${API_URL}/api/admin/movies`;
 
       const response = await axios.get(url);
-      setMovies(response.data.movies || response.data || []);
+      const rawMovies = response.data.movies || response.data || [];
+
+      // Chuẩn hóa ranking_order: nếu không phải số hợp lệ từ 1-8 thì để trống ("")
+      const sanitizedMovies = rawMovies.map((movie) => {
+        const rank = Number(movie.ranking_order);
+        const isValidRank = !isNaN(rank) && rank >= 1 && rank <= 8;
+        return {
+          ...movie,
+          ranking_order: isValidRank ? rank : "",
+        };
+      });
+
+      setMovies(sanitizedMovies);
     } catch (err) {
       console.error("Lỗi tải danh sách phim quản trị:", err);
     } finally {
@@ -111,6 +124,46 @@ function AdminMoviesPage() {
     }
   };
 
+  // 5.1. Lưu thứ tự 8 phim cho Bảng Xếp Hạng (Ranking)
+  const handleSaveRankingOrder = async () => {
+    const rankedMovies = movies
+      .filter(
+        (m) =>
+          m.ranking_order !== null &&
+          m.ranking_order !== "" &&
+          !isNaN(m.ranking_order),
+      )
+      .map((m) => ({
+        id: m.id || m.slug,
+        order: Number(m.ranking_order),
+      }))
+      .sort((a, b) => a.order - b.order);
+
+    if (rankedMovies.length > 8) {
+      alert("Bạn chỉ nên chọn tối đa 8 phim cho bảng xếp hạng!");
+      return;
+    }
+
+    const selectedIds = rankedMovies.map((m) => m.id);
+
+    setSavingRanking(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/admin/movies/ranking/set-order`,
+        {
+          movie_ids: selectedIds,
+        },
+      );
+      alert(response.data.message || "Đã lưu thứ tự Bảng Xếp Hạng thành công!");
+      fetchMovies(searchTerm);
+    } catch (err) {
+      console.error("Lỗi lưu bảng xếp hạng:", err);
+      alert("Lưu thứ tự bảng xếp hạng thất bại!");
+    } finally {
+      setSavingRanking(false);
+    }
+  };
+
   // 6. Xóa phim khỏi hệ thống
   const handleDeleteMovie = async (movie) => {
     const movieId = movie.id || movie.slug;
@@ -124,7 +177,6 @@ function AdminMoviesPage() {
 
     try {
       await axios.delete(`${API_URL}/api/admin/movies/${movieId}`);
-      // Lọc bỏ phim vừa xóa khỏi danh sách state trực tiếp để cập nhật giao diện
       setMovies((prevMovies) =>
         prevMovies.filter((m) => (m.id || m.slug) !== movieId),
       );
@@ -151,7 +203,6 @@ function AdminMoviesPage() {
         description: modalDescription,
       });
 
-      // Cập nhật lại state danh sách phim ở giao diện chính
       setMovies((prevMovies) =>
         prevMovies.map((m) => {
           if ((m.id || m.slug) === movieId) {
@@ -162,7 +213,7 @@ function AdminMoviesPage() {
       );
 
       alert("Cập nhật nội dung mô tả phim thành công!");
-      setEditingMovie(null); // Đóng modal
+      setEditingMovie(null);
     } catch (err) {
       console.error("Lỗi cập nhật nội dung mô tả:", err);
       alert("Cập nhật nội dung mô tả thất bại!");
@@ -178,6 +229,12 @@ function AdminMoviesPage() {
   }
 
   const bannerCount = movies.filter((m) => m.is_banner).length;
+  const rankingCount = movies.filter(
+    (m) =>
+      m.ranking_order !== null &&
+      m.ranking_order !== "" &&
+      Number(m.ranking_order) > 0,
+  ).length;
 
   return (
     <div className="bg-[#121315] min-h-screen text-white relative">
@@ -189,7 +246,7 @@ function AdminMoviesPage() {
             Quản Lý Phim & Đánh Giá (Admin)
           </h1>
 
-          {/* Khu vực thao tác Banner & Tìm kiếm */}
+          {/* Khu vực thao tác Banner, Ranking & Tìm kiếm */}
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
             <button
               onClick={handleSaveBannerTop5}
@@ -199,6 +256,16 @@ function AdminMoviesPage() {
               {savingBanner
                 ? "Đang lưu..."
                 : `Lưu Banner Top 5 (${bannerCount}/5)`}
+            </button>
+
+            <button
+              onClick={handleSaveRankingOrder}
+              disabled={savingRanking}
+              className="px-4 py-1.5 bg-purple-500 text-black font-bold rounded text-sm hover:bg-purple-400 transition disabled:opacity-50"
+            >
+              {savingRanking
+                ? "Đang lưu..."
+                : `Lưu BXH Top 8 (${rankingCount}/8)`}
             </button>
 
             <div className="flex gap-2">
@@ -224,6 +291,7 @@ function AdminMoviesPage() {
             <thead>
               <tr className="border-b border-gray-800 bg-[#1f2126] text-xs text-gray-400 uppercase tracking-wider">
                 <th className="p-4 text-center w-16">Banner</th>
+                <th className="p-4 text-center w-20">Thứ Hạng (1-8)</th>
                 <th className="p-4">Tên Phim</th>
                 <th className="p-4">Trạng Thái</th>
                 <th className="p-4 text-center">Tổng Tập Dự Kiến</th>
@@ -242,6 +310,7 @@ function AdminMoviesPage() {
                 const rating = movie.rating ?? 4.3;
                 const voteCount = movie.vote_count ?? 10353;
                 const isBanner = Boolean(movie.is_banner);
+                const rankingOrder = movie.ranking_order ?? "";
 
                 return (
                   <tr key={movieId} className="hover:bg-[#1c1e22] transition">
@@ -259,6 +328,26 @@ function AdminMoviesPage() {
                         }
                         className="w-4 h-4 accent-amber-500 cursor-pointer"
                         title="Chọn hiển thị lên banner trang chủ"
+                      />
+                    </td>
+
+                    {/* Cột nhập thứ hạng Bảng Xếp Hạng (1 đến 8) */}
+                    <td className="p-4 text-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max="8"
+                        value={rankingOrder}
+                        onChange={(e) =>
+                          handleChangeField(
+                            movieId,
+                            "ranking_order",
+                            e.target.value === "" ? "" : Number(e.target.value),
+                          )
+                        }
+                        placeholder="1-8"
+                        className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1.5 text-center text-white text-xs focus:outline-none focus:border-purple-500"
+                        title="Điền số từ 1 đến 8 để đưa vào bảng xếp hạng"
                       />
                     </td>
 

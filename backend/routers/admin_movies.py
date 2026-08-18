@@ -47,6 +47,7 @@ async def get_admin_movies(
                 "backdrop_url": m.backdrop_url,
                 "release_day": m.release_day,
                 "is_banner": getattr(m, "is_banner", False),
+                "ranking_order": getattr(m, "ranking_order", None), # Thêm trường ranking_order để frontend quản lý nếu cần
                 "rating": getattr(m, "rating", 4.3),
                 "vote_count": getattr(m, "vote_count", 10353)
             })
@@ -120,7 +121,6 @@ async def create_movie(
             status="ongoing"
         )
         
-        # Đưa vào session và flush trước để lấy ID instance cho quan hệ Many-to-Many
         db.add(new_movie)
         db.flush() 
 
@@ -147,7 +147,7 @@ async def create_movie(
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý server: {str(e)}")
 
 
-# 2. THÊM TẬP PHIM (Tối ưu nhận file lớn bằng cách ghi stream tạm và đẩy sang Celery)
+# 2. THÊM TẬP PHIM
 @router.post("/{movie_slug}/episodes", summary="2. Thêm Tập Phim Cho Phim Đã Có")
 async def add_episode(
     movie_slug: str,
@@ -232,7 +232,7 @@ async def update_movie_status_and_total(
 
 
 # ==========================================
-# 4. CHỌN 5 PHIM HIỂN THỊ TRÊN BANNER (ĐẶT LÊN ĐẦU TIÊN)
+# 4. CHỌN 5 PHIM HIỂN THỊ TRÊN BANNER
 # ==========================================
 @router.post("/banner/set-top-5", summary="4. Chọn danh sách 5 phim hiển thị trên Banner")
 async def set_banner_movies(
@@ -241,14 +241,10 @@ async def set_banner_movies(
 ):
     try:
         movie_ids = payload.get("movie_ids", [])
-        
-        # Đảm bảo ép kiểu ID chính xác sang số nguyên (nếu ID trong DB của bạn là kiểu int)
         processed_ids = [int(i) for i in movie_ids if i is not None]
 
-        # 1. Reset toàn bộ cờ is_banner về False
         db.query(Movie).update({Movie.is_banner: False}, synchronize_session=False)
         
-        # 2. Cập nhật các ID được chọn thành True
         if processed_ids:
             db.query(Movie).filter(Movie.id.in_(processed_ids)).update({Movie.is_banner: True}, synchronize_session=False)
             
@@ -258,7 +254,43 @@ async def set_banner_movies(
         db.rollback()
         print(f"❌ [LỖI SET BANNER]: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-# 5. FAKE ĐÁNG GIÁ SAO CHO PHIM (Bản fix khớp tuyệt đối với Frontend)
+
+
+# ==========================================
+# 4.1. CẬP NHẬT THỨ TỰ BẢNG XẾP HẠNG (RANKING ORDER)
+# ==========================================
+@router.post("/ranking/set-order", summary="4.1. Cập nhật thứ tự 8 phim cho Bảng Xếp Hạng")
+async def set_ranking_movies_order(
+    payload: dict,
+    db: Session = Depends(get_db)
+):
+    try:
+        movie_ids = payload.get("movie_ids", [])
+        
+        # Reset toàn bộ ranking_order về NULL trước
+        db.query(Movie).update({Movie.ranking_order: None}, synchronize_session=False)
+        
+        # Gán lại số thứ tự từ 1 đến N tương ứng với vị trí trong danh sách gửi lên
+        for index, m_id in enumerate(movie_ids):
+            if m_id is not None:
+                # Kiểm tra xem m_id là số hay chuỗi/slug để query linh hoạt
+                query = db.query(Movie)
+                if str(m_id).isdigit():
+                    query = query.filter(or_(Movie.id == int(m_id), Movie.slug == str(m_id)))
+                else:
+                    query = query.filter(Movie.slug == str(m_id))
+                
+                query.update({Movie.ranking_order: index + 1}, synchronize_session=False)
+                
+        db.commit()
+        return {"message": "Đã cập nhật thứ tự Bảng Xếp Hạng thành công!"}
+    except Exception as e:
+        db.rollback()
+        print(f"❌ [LỖI SET RANKING ORDER]: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 5. FAKE ĐÁNG GIÁ SAO CHO PHIM
 @router.patch("/{movie_id}/rating", summary="5. Fake số điểm đánh giá và lượt bình chọn")
 async def update_movie_rating(
     movie_id: str,
@@ -267,21 +299,18 @@ async def update_movie_rating(
 ):
     try:
         movie = None
-        # Thử tìm theo ID số trước (nếu movie_id đổi được sang int)
         try:
             numeric_id = int(movie_id)
             movie = db.query(Movie).filter(Movie.id == numeric_id).first()
         except ValueError:
             pass
 
-        # Nếu không tìm thấy theo ID số, tìm theo slug hoặc string ID
         if not movie:
             movie = db.query(Movie).filter(Movie.slug == movie_id).first()
 
         if not movie:
             raise HTTPException(status_code=404, detail=f"Không tìm thấy phim với ID/Slug: {movie_id}")
 
-        # Lấy giá trị từ payload linh hoạt
         rating_val = payload.get("rating") if payload.get("rating") is not None else payload.get("voteAverage")
         vote_val = payload.get("vote_count") if payload.get("vote_count") is not None else payload.get("voteCount")
 
@@ -294,8 +323,6 @@ async def update_movie_rating(
         db.commit()
         db.refresh(movie)
         
-        print(f"✨ [SUCCESS] Update phim ID={movie.id} -> Rating: {movie.rating}, Vote: {movie.vote_count}")
-        
         return {
             "success": True,
             "message": f"Đã cập nhật đánh giá cho phim '{movie.title}' thành công!", 
@@ -306,6 +333,7 @@ async def update_movie_rating(
         db.rollback()
         print(f"❌ [ERROR UPDATE RATING]: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # 6. XÓA PHIM KHỎI HỆ THỐNG
 @router.delete("/{movie_id}", summary="6. Xóa phim khỏi hệ thống")
@@ -325,6 +353,8 @@ async def delete_movie(
         db.rollback()
         print(f"❌ [LỖI DELETE MOVIE]: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 # 7. CHỈNH SỬA / CẬP NHẬT RIÊNG NỘI DUNG (DESCRIPTION) CỦA PHIM
 @router.patch("/{movie_id}/description", summary="7. Cập nhật riêng nội dung mô tả phim")
 async def update_movie_description(
@@ -352,4 +382,3 @@ async def update_movie_description(
         db.rollback()
         print(f"❌ [LỖI UPDATE DESCRIPTION]: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-

@@ -3,7 +3,29 @@ import { Link } from "react-router-dom";
 
 function RankingBoard({ movies = [] }) {
   const safeMovies = Array.isArray(movies) ? movies : [];
-  const topMovies = safeMovies.slice(0, 8);
+
+  // 1. Lọc ra những phim có ranking_order là số hợp lệ (từ 1 đến 8)
+  const rankedMovies = safeMovies
+    .filter((movie) => {
+      const rank = Number(movie.ranking_order);
+      return !isNaN(rank) && rank >= 1 && rank <= 8;
+    })
+    // 2. Sắp xếp lại theo đúng thứ tự từ 1 đến 8
+    .sort((a, b) => Number(a.ranking_order) - Number(b.ranking_order));
+
+  // Nếu chưa chọn phim nào vào BXH thì có thể ẩn hoặc hiển thị thông báo trống
+  if (rankedMovies.length === 0) {
+    return (
+      <div className="bg-[#14161d] p-6 rounded-2xl border border-gray-800/80 shadow-2xl w-full">
+        <h2 className="text-lg font-bold text-sky-400 mb-4 uppercase tracking-wider flex items-center gap-2 border-b border-gray-800/80 pb-3">
+          Bảng Xếp Hạng
+        </h2>
+        <p className="text-sm text-gray-500 text-center py-4">
+          Chưa có phim nào trong bảng xếp hạng.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#14161d] p-6 rounded-2xl border border-gray-800/80 shadow-2xl w-full">
@@ -12,11 +34,13 @@ function RankingBoard({ movies = [] }) {
       </h2>
 
       <div className="flex flex-col gap-4">
-        {topMovies.map((movie, index) => {
-          const rank = index + 1;
+        {rankedMovies.map((movie) => {
+          // Lấy chính xác thứ tự được admin gán (1, 2, 3...)
+          const rank = Number(movie.ranking_order);
+
           return (
             <div
-              key={movie.id || movie.slug || index}
+              key={movie.id || movie.slug}
               className="flex items-center gap-4 py-2 border-b border-gray-800/40 last:border-none group cursor-pointer"
             >
               {/* Cột Số thứ tự style YanHH3D: Số xanh + gạch chân */}

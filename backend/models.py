@@ -39,6 +39,7 @@ class Movie(Base):
     total_ep = Column(Integer, default=0) 
     
     is_banner = Column(Boolean, default=False)
+    ranking_order = Column(Integer, nullable=True) # <-- BỔ SUNG CỘT NÀY VÀO ĐÂY
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     episodes = relationship("Episode", back_populates="movie", cascade="all, delete-orphan")

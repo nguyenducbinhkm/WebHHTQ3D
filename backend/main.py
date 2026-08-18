@@ -70,6 +70,17 @@ def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db
     }
 
 # ==================== PHIM (MOVIES) ====================
+@app.get("/api/movies/ranking")
+def get_ranking_movies(db: Session = Depends(get_db)):
+    query = text("""
+        SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.status, m.views_count, m.ranking_order
+        FROM movies m
+        WHERE m.ranking_order IS NOT NULL AND m.ranking_order > 0
+        ORDER BY m.ranking_order ASC
+        LIMIT 8
+    """)
+    return db.execute(query).mappings().all()
+
 @app.get("/api/movies/status/completed")
 def get_completed_movies(db: Session = Depends(get_db)):
     query = text("""
@@ -129,6 +140,7 @@ def get_movies(db: Session = Depends(get_db)):
             m.views_count,
             m.total_ep,
             m.is_banner,
+            m.ranking_order, -- <--- THÊM DÒNG NÀY VÀO ĐÂY
             (SELECT COUNT(*) FROM episodes e WHERE e.movie_id = m.id) AS current_ep
         FROM movies m
         ORDER BY m.created_at DESC
