@@ -294,13 +294,12 @@ const Banner = () => {
                   <div className="flex items-center gap-5 pt-2">
                     <Link
                       to={`/watch/${slug}`}
-                      className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-xl transition transform hover:scale-105 active:scale-95 shrink-0"
-                      title="Xem Phim"
+                      className="w-16 h-16 rounded-full bg-[#fae19d] hover:bg-[#ffecb3] text-[#1a1a1a] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-[0_0_25px_rgba(250,225,157,0.5)] shrink-0"
                     >
                       <FaPlay className="text-xl ml-1" />
                     </Link>
 
-                    <div className="flex items-center gap-6 bg-white/10 backdrop-blur-md px-6 py-3.5 rounded-full border border-white/15 text-gray-200">
+                    <div className="flex items-center gap-6 bg-white/10 backdrop-blur-md px-6 py-3.5 rounded-full border border-white/15 text-gray-200 transition-all duration-300 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                       <button
                         onClick={(e) => toggleFavorite(movie, e)}
                         className={`transition ${
