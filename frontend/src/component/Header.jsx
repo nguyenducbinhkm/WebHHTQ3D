@@ -242,7 +242,7 @@ const Header = () => {
           </button>
 
           <Link
-            to="/lich-su"
+            to="/lich-su-xem"
             className="flex flex-col items-center cursor-pointer hover:text-sky-400 transition-colors group px-0.5"
             title="Lịch sử xem"
           >

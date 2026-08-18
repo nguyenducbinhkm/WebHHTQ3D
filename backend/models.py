@@ -38,19 +38,13 @@ class Movie(Base):
     release_day = Column(String(50), nullable=True, default='tue')
     total_ep = Column(Integer, default=0) 
     
-    # Trường bổ sung để quản lý hiển thị 5 phim lên Banner
     is_banner = Column(Boolean, default=False)
-    
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    # Quan hệ tới bảng episodes
     episodes = relationship("Episode", back_populates="movie", cascade="all, delete-orphan")
-    
-    # Quan hệ tới bảng categories qua bảng trung gian vừa tạo
     categories = relationship("Category", secondary=movie_categories, backref="movies")
-
-    # Quan hệ tới bảng comments (Tự động xóa bình luận nếu phim bị xóa)
     comments = relationship("Comment", back_populates="movie", cascade="all, delete-orphan")
+    watch_histories = relationship("WatchHistory", back_populates="movie", cascade="all, delete-orphan")
 
 class Episode(Base):
     __tablename__ = "episodes"
@@ -71,11 +65,12 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    avatar_url = Column(String(500), nullable=True)  # <--- THÊM DÒNG NÀY VÀO ĐÂY
+    avatar_url = Column(String(500), nullable=True)
     role = Column(Enum('user', 'admin'), default='user')
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+    watch_histories = relationship("WatchHistory", back_populates="user", cascade="all, delete-orphan")
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -85,18 +80,26 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     
-    # Các trường bổ sung hỗ trợ Trả lời bình luận và Thả tym
     parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
     likes_count = Column(Integer, default=0)
-    
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    # Thiết lập liên kết ngược lại với User, Movie và quan hệ đệ quy replies
     user = relationship("User", back_populates="comments")
     movie = relationship("Movie", back_populates="comments")
-    
     replies = relationship(
         "Comment", 
         backref=backref("parent", remote_side=[id]), 
         cascade="all, delete-orphan"
     )
+
+class WatchHistory(Base):
+    __tablename__ = "watch_histories"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    episode_number = Column(Integer, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="watch_histories")
+    movie = relationship("Movie", back_populates="watch_histories")

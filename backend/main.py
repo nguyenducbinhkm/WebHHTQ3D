@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
 
-# IMPORT CÁC ROUTER (admin_movies, auth, comments)
-from routers import admin_movies, auth, comments, user 
+# IMPORT CÁC ROUTER (Thêm watch_history vào đây)
+from routers import admin_movies, auth, comments, user, watch_history 
 
 app = FastAPI(title="Movie 3D Donghua API")
 
@@ -31,8 +31,9 @@ app.add_middleware(
 # ĐĂNG KÝ CÁC ROUTER VÀO ỨNG DỤNG
 app.include_router(admin_movies.router)
 app.include_router(auth.router)
-app.include_router(comments.router)  # <--- ĐÃ THÊM ROUTER COMMENTS TẠI ĐÂY
+app.include_router(comments.router)
 app.include_router(user.router)
+app.include_router(watch_history.router)  # <--- ĐĂNG KÝ ROUTER WATCH HISTORY TẠI ĐÂY
 
 @app.get("/")
 def home():
@@ -69,9 +70,7 @@ def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db
     }
 
 # ==================== PHIM (MOVIES) ====================
-# QUAN TRỌNG: Các route tĩnh (top-hot, schedule, search) PHẢI ĐẶT TRƯỚC route động /{slug}
 
-# 1. API Lấy Top Phim Hot
 @app.get("/api/movies/top-hot")
 def get_top_hot_movies(db: Session = Depends(get_db)):
     query = text("""
@@ -82,7 +81,6 @@ def get_top_hot_movies(db: Session = Depends(get_db)):
     """)
     return db.execute(query).mappings().all()
 
-# 2. API Lấy danh sách phim theo lịch phát sóng
 @app.get("/api/movies/schedule/{day}")
 def get_movies_by_schedule(day: str, db: Session = Depends(get_db)):
     query = text("""
@@ -92,7 +90,6 @@ def get_movies_by_schedule(day: str, db: Session = Depends(get_db)):
     """)
     return db.execute(query, {"day": day}).mappings().all()
 
-# 3. API Tìm kiếm phim
 @app.get("/api/movies/search")
 def search_movies(q: str = Query("", description="Từ khóa tìm kiếm"), db: Session = Depends(get_db)):
     if not q or not q.strip():
@@ -109,7 +106,6 @@ def search_movies(q: str = Query("", description="Từ khóa tìm kiếm"), db: 
     """)
     return db.execute(query, {"q": search_pattern}).mappings().all()
 
-# 4. API Lấy danh sách tất cả phim
 @app.get("/api/movies")
 def get_movies(db: Session = Depends(get_db)):
     movies_query = text("""
@@ -123,7 +119,7 @@ def get_movies(db: Session = Depends(get_db)):
             m.status, 
             m.views_count,
             m.total_ep,
-            m.is_banner,  -- <--- BỔ SUNG TRƯỜNG NÀY VÀO ĐÂY
+            m.is_banner,
             (SELECT COUNT(*) FROM episodes e WHERE e.movie_id = m.id) AS current_ep
         FROM movies m
         ORDER BY m.created_at DESC
@@ -147,7 +143,6 @@ def get_movies(db: Session = Depends(get_db)):
 
     return result
 
-# 5. API Lấy chi tiết 1 bộ phim theo slug (ĐẶT Ở CUỐI CÙNG)
 @app.get("/api/movies/{slug}")
 def get_movie_detail(slug: str, db: Session = Depends(get_db)):
     movie_query = text("""

@@ -26,6 +26,68 @@ function WatchPage() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const saveHistory = async () => {
+    if (!movieData) return;
+
+    const movieId = movieData.id || movieData.movie_info?.id || movieData.M_ID;
+    if (!movieId) return;
+
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("access_token");
+
+    // Lấy thông tin chuẩn để hiển thị poster và title
+    const movieTitle =
+      movieData.title || movieData.movie_info?.title || "Phim Hoạt Hình";
+    const moviePoster =
+      movieData?.poster_url ||
+      movieData?.thumb_url ||
+      movieData?.movie_info?.poster_url ||
+      movieData?.movie_info?.thumb_url ||
+      movieData?.thumb ||
+      "";
+
+    if (token) {
+      // === 1. ĐÃ ĐĂNG NHẬP: Gửi lên Backend FastAPI ===
+      try {
+        await axios.post(
+          "http://localhost:8000/api/watch-history/",
+          {
+            movie_id: Number(movieId),
+            episode_number: Number(currentEpisode),
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+      } catch (err) {
+        console.error("Lỗi gửi lịch sử lên server:", err);
+      }
+    } else {
+      // === 2. CHƯA ĐĂNG NHẬP (KHÁCH): Lưu vào localStorage đúng chuẩn cấu trúc ===
+      const historyItem = {
+        id: movieId,
+        movie_id: Number(movieId),
+        episode_number: Number(currentEpisode),
+        updated_at: new Date().toISOString(),
+        movie: {
+          id: movieId,
+          title: movieTitle,
+          slug: slug,
+          poster_url: moviePoster,
+        },
+      };
+
+      // Đọc đúng key "watch_history" mà trang WatchHistoryPage đang dùng
+      const localData = JSON.parse(localStorage.getItem("watch_history")) || [];
+
+      // Lọc bỏ phim cũ cùng slug để đẩy phim mới xem lên đầu
+      const filtered = localData.filter((item) => item.movie?.slug !== slug);
+      const newHistory = [historyItem, ...filtered];
+
+      localStorage.setItem("watch_history", JSON.stringify(newHistory));
+    }
+  };
+
   // Đọc số tập từ URL query string (ví dụ: ?ep=5) khi component mount hoặc URL thay đổi
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -36,6 +98,12 @@ function WatchPage() {
       setCurrentEpisode(1);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    if (movieData) {
+      saveHistory();
+    }
+  }, [currentEpisode, slug, movieData]);
 
   useEffect(() => {
     setLoading(true);
@@ -265,7 +333,7 @@ function WatchPage() {
     <div className="bg-[#121315] min-h-screen text-white">
       <div className="container mx-auto px-6 py-4">
         {/* Breadcrumb */}
-        <div className="text-xs text-gray-400 mb-4 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+        <div className="text-xs text-[#FFE066] mb-4 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
           <Link to="/" className="hover:text-white">
             Trang chủ
           </Link>
