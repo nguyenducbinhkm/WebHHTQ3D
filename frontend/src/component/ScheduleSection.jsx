@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom"; // Dùng Link để chuyển trang mượt mà hơn thẻ a
 
 // Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
@@ -26,7 +27,7 @@ export default function ScheduleSection() {
   const [movies, setMovies] = useState([]);
   const [todayString, setTodayString] = useState("");
 
-  // Tự động tạo chuỗi hiển thị ngày tháng năm hiện tại (Ví dụ: Thứ Sáu, ngày 14/08/2026)
+  // Tự động tạo chuỗi hiển thị ngày tháng năm hiện tại
   useEffect(() => {
     const now = new Date();
     const options = {
@@ -37,7 +38,6 @@ export default function ScheduleSection() {
       timeZone: "Asia/Ho_Chi_Minh",
     };
 
-    // Format tiếng Việt chuẩn
     const formatter = new Intl.DateTimeFormat("vi-VN", options);
     setTodayString(formatter.format(now));
   }, []);
@@ -106,29 +106,56 @@ export default function ScheduleSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {movies.map((m) => (
-            <a
-              key={m.id || m.slug}
-              href={`/watch/${m.slug}`}
-              className="group bg-[#151c2d] rounded-2xl overflow-hidden border border-gray-800 hover:border-sky-500/50 transition-all duration-300 shadow-lg flex flex-col"
-            >
-              <div className="relative aspect-[3/4] overflow-hidden bg-gray-900">
-                <img
-                  src={m.poster_url || m.backdrop_url}
-                  alt={m.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-3 left-3 bg-orange-600/90 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-md">
-                  {m.status || "Ongoing"}
+          {movies.map((m) => {
+            const currentEp = m.current_ep || 1;
+            const totalEp = m.total_ep || 0;
+            const status = m.status;
+
+            // Xây dựng nhãn hiển thị tập phim giống hệt Movielist
+            let episodeLabel = "Tập mới";
+            if (status === "trailer") {
+              episodeLabel = "Trailer";
+            } else if (totalEp > 0) {
+              episodeLabel = `Tập ${currentEp}/${totalEp}`;
+            } else {
+              episodeLabel = `Tập ${currentEp}`;
+            }
+
+            return (
+              <Link
+                key={m.id || m.slug}
+                to={`/watch/${m.slug}?ep=${currentEp}`}
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="group bg-[#151c2d] rounded-2xl overflow-hidden border border-gray-800 hover:border-sky-500/50 transition-all duration-300 shadow-lg flex flex-col"
+              >
+                <div className="relative aspect-[3/4] overflow-hidden bg-gray-900">
+                  <img
+                    src={m.poster_url || m.backdrop_url}
+                    alt={m.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+
+                  {/* Tag Số Tập (Thay thế cho cột status) */}
+                  <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 bg-red-600/90 text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md shadow-md backdrop-blur-sm">
+                    {episodeLabel}
+                  </div>
+
+                  {/* Tag Sub/TM (Đồng bộ style với Movielist) */}
+                  <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 bg-teal-600/90 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 sm:px-2 rounded shadow-md backdrop-blur-sm">
+                    SUB+TM
+                  </div>
                 </div>
-              </div>
-              <div className="p-3">
-                <p className="text-white font-medium text-sm truncate group-hover:text-sky-400 transition-colors">
-                  {m.title}
-                </p>
-              </div>
-            </a>
-          ))}
+
+                <div className="p-3">
+                  <p className="text-white font-medium text-sm truncate group-hover:text-sky-400 transition-colors">
+                    {m.title}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

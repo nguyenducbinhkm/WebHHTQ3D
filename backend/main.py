@@ -104,7 +104,17 @@ def get_top_hot_movies(db: Session = Depends(get_db)):
 @app.get("/api/movies/schedule/{day}")
 def get_movies_by_schedule(day: str, db: Session = Depends(get_db)):
     query = text("""
-        SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.status, m.views_count, m.release_day
+        SELECT 
+            m.id, 
+            m.title, 
+            m.slug, 
+            m.poster_url, 
+            m.backdrop_url, 
+            m.status, 
+            m.views_count, 
+            m.release_day,
+            m.total_ep,
+            (SELECT COUNT(*) FROM episodes e WHERE e.movie_id = m.id) AS current_ep
         FROM movies m
         WHERE m.release_day = :day
     """)
