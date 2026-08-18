@@ -47,7 +47,7 @@ async def get_admin_movies(
                 "backdrop_url": m.backdrop_url,
                 "release_day": m.release_day,
                 "is_banner": getattr(m, "is_banner", False),
-                "ranking_order": getattr(m, "ranking_order", None), # Thêm trường ranking_order để frontend quản lý nếu cần
+                "ranking_order": getattr(m, "ranking_order", None), 
                 "rating": getattr(m, "rating", 4.3),
                 "vote_count": getattr(m, "vote_count", 10353)
             })
@@ -75,7 +75,6 @@ async def create_movie(
     db: Session = Depends(get_db)
 ):
     try:
-        # Kiểm tra bắt buộc file poster
         if not poster_file or not poster_file.filename:
             raise HTTPException(status_code=400, detail="Bắt buộc phải tải lên file ảnh Poster!")
 
@@ -145,6 +144,67 @@ async def create_movie(
         db.rollback()
         print(f"❌ [LỖI CREATE MOVIE]: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý server: {str(e)}")
+
+
+# 1.1. CẬP NHẬT / THAY ĐỔI POSTER VÀ BACKDROP THEO SLUG (MỚI THÊM)
+@router.patch("/{slug}/images", summary="1.1. Thay đổi Poster và Backdrop của phim theo slug")
+async def update_movie_images(
+    slug: str,
+    poster_file: Optional[UploadFile] = File(None, description="Tải lên file Poster mới (tuỳ chọn)"),
+    backdrop_file: Optional[UploadFile] = File(None, description="Tải lên file Backdrop mới (tuỳ chọn)"),
+    db: Session = Depends(get_db)
+):
+    try:
+        movie = db.query(Movie).filter(Movie.slug == slug).first()
+        if not movie:
+            raise HTTPException(status_code=404, detail=f"Không tìm thấy phim với slug: '{slug}'")
+
+        # 1. Xử lý cập nhật Poster nếu có tải lên
+        if poster_file and poster_file.filename:
+            poster_bytes = await poster_file.read()
+            poster_ext = poster_file.filename.split('.')[-1] if '.' in poster_file.filename else 'jpg'
+            poster_path = f"{slug}/{slug}_poster.{poster_ext}"
+            
+            raw_poster_url = upload_file_to_supabase(
+                file_bytes=poster_bytes,
+                file_name=poster_path,
+                bucket_name="movies",
+                content_type=poster_file.content_type
+            )
+            if raw_poster_url:
+                movie.poster_url = str(raw_poster_url)
+
+        # 2. Xử lý cập nhật Backdrop nếu có tải lên
+        if backdrop_file and backdrop_file.filename:
+            backdrop_bytes = await backdrop_file.read()
+            bd_ext = backdrop_file.filename.split('.')[-1] if '.' in backdrop_file.filename else 'jpg'
+            backdrop_path = f"{slug}/{slug}_bd.{bd_ext}"
+            
+            raw_bd_url = upload_file_to_supabase(
+                file_bytes=backdrop_bytes,
+                file_name=backdrop_path,
+                bucket_name="movies",
+                content_type=backdrop_file.content_type
+            )
+            if raw_bd_url:
+                movie.backdrop_url = str(raw_bd_url)
+
+        db.commit()
+        db.refresh(movie)
+
+        return {
+            "success": True,
+            "message": f"Đã cập nhật hình ảnh thành công cho phim: '{movie.title}'!",
+            "slug": movie.slug,
+            "poster_url": movie.poster_url,
+            "backdrop_url": movie.backdrop_url
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        db.rollback()
+        print(f"❌ [LỖI UPDATE MOVIE IMAGES]: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # 2. THÊM TẬP PHIM
@@ -267,13 +327,10 @@ async def set_ranking_movies_order(
     try:
         movie_ids = payload.get("movie_ids", [])
         
-        # Reset toàn bộ ranking_order về NULL trước
         db.query(Movie).update({Movie.ranking_order: None}, synchronize_session=False)
         
-        # Gán lại số thứ tự từ 1 đến N tương ứng với vị trí trong danh sách gửi lên
         for index, m_id in enumerate(movie_ids):
             if m_id is not None:
-                # Kiểm tra xem m_id là số hay chuỗi/slug để query linh hoạt
                 query = db.query(Movie)
                 if str(m_id).isdigit():
                     query = query.filter(or_(Movie.id == int(m_id), Movie.slug == str(m_id)))
