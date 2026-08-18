@@ -6,7 +6,8 @@ import CategoryPage from "./component/CategoryPage";
 import SearchPage from "./component/SearchPage";
 import WatchPage from "./component/WatchPage";
 import FavoritesPage from "./component/FavoritesPage";
-import WatchHistoryPage from "./component/WatchHistoryPage"; // <--- 1. IMPORT TRANG LỊCH SỬ XEM
+import WatchHistoryPage from "./component/WatchHistoryPage";
+import CompletedMoviesPage from "./component/CompletedMoviesPage"; // <--- 1. IMPORT TRANG PHIM ĐÃ HOÀN THÀNH
 import AdminMoviesPage from "./component/AdminMoviesPage";
 
 // Component tự động đưa màn hình về vị trí (0, 0) ngay lập tức khi đổi đường dẫn hoặc tham số (?ep=...)
@@ -70,7 +71,6 @@ function App() {
             </MainLayout>
           }
         />
-        {/* 2. THÊM ROUTE LỊCH SỬ XEM VÀO ĐÂY */}
         <Route
           path="/lich-su-xem"
           element={
@@ -80,7 +80,17 @@ function App() {
           }
         />
 
-        {/* Trang Admin giữ nguyên không bọc MainLayout (hoặc bọc layout riêng nếu cần) */}
+        {/* 2. THÊM ROUTE PHIM ĐÃ HOÀN THÀNH VÀO ĐÂY */}
+        <Route
+          path="/movies/completed"
+          element={
+            <MainLayout>
+              <CompletedMoviesPage />
+            </MainLayout>
+          }
+        />
+
+        {/* Trang Admin giữ nguyên không bọc MainLayout */}
         <Route path="/admin/movies" element={<AdminMoviesPage />} />
       </Routes>
     </>

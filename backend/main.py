@@ -70,6 +70,15 @@ def get_movies_by_category_slug(category_slug: str, db: Session = Depends(get_db
     }
 
 # ==================== PHIM (MOVIES) ====================
+@app.get("/api/movies/status/completed")
+def get_completed_movies(db: Session = Depends(get_db)):
+    query = text("""
+        SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.status, m.views_count
+        FROM movies m
+        WHERE m.status = 'completed'
+        ORDER BY m.views_count DESC
+    """)
+    return db.execute(query).mappings().all()
 
 @app.get("/api/movies/top-hot")
 def get_top_hot_movies(db: Session = Depends(get_db)):

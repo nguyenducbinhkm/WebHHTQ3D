@@ -157,9 +157,21 @@ const Header = () => {
 
           {isMenuOpen && (
             <div className="absolute top-10 left-0 bg-[#1a1c20] border border-gray-700 rounded shadow-xl py-2 w-48 z-50 max-h-96 overflow-y-auto">
-              <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase border-b border-gray-700 mb-1">
-                Thể Loại Phim
+              {/* 1. Phim Đã Hoàn Thành lên trên cùng, hover sáng màu xanh nước biển */}
+              <Link
+                to="/movies/completed"
+                onClick={() => setIsMenuOpen(false)}
+                className="block px-4 py-2 text-sm font-semibold transition-colors hover:text-sky-400 text-white border-b border-gray-700 pb-2 mb-1"
+              >
+                Phim Đã Hoàn Thành
+              </Link>
+
+              {/* 2. Tiêu đề Thể Loại nằm bên dưới */}
+              <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mt-1 mb-1">
+                Thể Loại
               </div>
+
+              {/* 3. Danh sách thể loại giữ nguyên bảng màu như cũ */}
               {categories.length > 0 ? (
                 categories.map((cat, index) => {
                   const colorClass =
