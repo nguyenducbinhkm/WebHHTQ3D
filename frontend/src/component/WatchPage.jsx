@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link, useParams, useLocation } from "react-router-dom";
+import {
+  Link,
+  useParams,
+  useLocation,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
 import Movielist from "./Movielist";
@@ -244,6 +250,8 @@ function WatchPage() {
   const movieTitle =
     movieData?.movie_info?.title || movieData?.title || "Phim Hoạt Hình";
 
+  const navigate = useNavigate();
+
   // Lấy ID phim chuẩn để truyền vào component bình luận
   const movieId = movieData?.movie_info?.id || movieData?.id;
 
@@ -314,7 +322,10 @@ function WatchPage() {
           (ep) => (
             <button
               key={ep}
-              onClick={() => setCurrentEpisode(ep)}
+              onClick={() => {
+                setCurrentEpisode(ep);
+                navigate(`?ep=${ep}`, { replace: true }); // Cập nhật ngay lập tức URL thành ?ep=2 mà không làm reload trang
+              }}
               className={`py-2 text-xs rounded font-medium transition ${
                 currentEpisode === ep
                   ? "bg-[#38bdf8] text-black font-bold"

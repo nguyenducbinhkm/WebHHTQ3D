@@ -23,7 +23,9 @@ if not DATABASE_URL:
 # LƯU Ý: Nếu URL là postgresql (Supabase), SQLAlchemy tự nhận diện.
 # Nếu là MySQL, nó sẽ dùng pymysql.
 engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 Base = declarative_base()
 
 def get_db():
