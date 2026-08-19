@@ -1,10 +1,10 @@
 import os
 import shutil
-from tasks.celery_app import celery_app
-from services.ffmpeg_service import convert_to_hls
-from services.supabase_service import upload_folder_to_supabase
-from database import SessionLocal
-from models import Episode, Movie
+from app.tasks.celery_app import celery_app
+from app.services.ffmpeg_service import convert_to_hls
+from app.services.supabase_service import upload_folder_to_supabase
+from app.core.database import SessionLocal
+from app.model.models import Episode, Movie
 
 @celery_app.task
 def process_video_hls(input_file_path: str, movie_slug: str, episode_slug: str):

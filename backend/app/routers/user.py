@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
-from database import get_db
-import models
-from security import get_current_user  # Hàm lấy user hiện tại từ token của bạn
+from app.core.database import get_db
+import app.model.models as models
+from app.core.security import get_current_user  # Hàm lấy user hiện tại từ token của bạn
+from app.crud import crud_user
 import os
 
 router = APIRouter(prefix="/api/user", tags=["User"])
@@ -24,8 +25,7 @@ async def update_avatar(
         file_ext = file.filename.split(".")[-1]
         file_name = f"avatar_{current_user.id}_{int(os.urandom(4).hex())}.{file_ext}"
         
-        # 3. Sử dụng Supabase Client để upload vào Bucket (Ví dụ bucket tên là 'avatars')
-        # Đảm bảo bạn đã cấu hình biến môi trường SUPABASE_URL và SUPABASE_SERVICE_KEY (hoặc ANON_KEY)
+        # 3. Sử dụng Supabase Client để upload vào Bucket
         from supabase import create_client
         SUPABASE_URL = os.getenv("SUPABASE_URL")
         SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
@@ -51,19 +51,17 @@ async def update_avatar(
         if not avatar_url:
             raise HTTPException(status_code=500, detail="Không thể tạo đường dẫn công khai cho ảnh!")
 
-        # 5. Cập nhật vào cột avatar_url trong bảng users của Database
-        current_user.avatar_url = avatar_url
-        db.commit()
-        db.refresh(current_user)
+        # 5. Cập nhật vào cột avatar_url trong bảng users thông qua CRUD
+        updated_user = crud_user.update_user_avatar_db(db, current_user, avatar_url)
 
         return {
             "message": "Cập nhật ảnh đại diện thành công!",
             "user": {
-                "id": current_user.id,
-                "username": current_user.username,
-                "email": current_user.email,
-                "avatar_url": current_user.avatar_url,
-                "role": current_user.role
+                "id": updated_user.id,
+                "username": updated_user.username,
+                "email": updated_user.email,
+                "avatar_url": updated_user.avatar_url,
+                "role": updated_user.role
             }
         }
 

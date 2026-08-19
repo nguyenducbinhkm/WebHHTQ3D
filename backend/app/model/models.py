@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, DateTime, Table, Float, Boolean
 from sqlalchemy.orm import relationship, backref
-from database import Base
+from app.core.database import Base
 import datetime
 
 # Khai báo bảng trung gian many-to-many giữa Movie và Category

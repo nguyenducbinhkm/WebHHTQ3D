@@ -4,8 +4,8 @@ import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from database import get_db
-from models import User
+from app.core.database import get_db
+from app.model.models import User
 
 SECRET_KEY = "super_secret_key_moview_3d_donghua_2026"
 ALGORITHM = "HS256"
