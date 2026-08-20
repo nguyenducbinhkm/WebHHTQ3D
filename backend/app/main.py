@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 
 from app.routers import admin_movies, auth, comments, user, watch_history, movies, categories, schedule_categories
+from app.redis import check_redis_connection  # <-- Import hàm kiểm tra Redis
 
 load_dotenv()
 
@@ -14,6 +15,11 @@ from app.core.database import get_db
 
 
 app = FastAPI(title="Movie 3D Donghua API")
+
+# Thêm sự kiện khởi động để kiểm tra kết nối Redis Cloud
+@app.on_event("startup")
+def startup_event():
+    check_redis_connection()
 
 # Cấu hình CORS linh hoạt cho cả Local và Production (Vercel)
 DEFAULT_ORIGINS = "https://web-hhtq-3-d.vercel.app,http://localhost:5173,http://localhost:3000"
@@ -41,5 +47,3 @@ app.include_router(movies.router)
 @app.get("/")
 def home():
     return {"message": "API Xem Phim 3D Đang Hoạt Động!"}
-
-
