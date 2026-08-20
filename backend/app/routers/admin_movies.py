@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Q
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.crud import crud_admin_movies
-
+from app.redis import redis_client
 # Khởi tạo router cho module quản lý phim admin
 router = APIRouter(prefix="/api/admin/movies", tags=["Admin Movies"])
 
@@ -156,6 +156,11 @@ async def update_movie_status_and_total(
 
         db.commit()
         db.refresh(movie)
+        #  XÓA CACHE CỦA PHIM HOÀN THÀNH NGAY KHI CÓ CẬP NHẬT TRẠNG THÁI
+        try:
+            redis_client.delete("movies:completed_v2")
+        except Exception as cache_err:
+            print(f"⚠️ Không thể xóa cache redis: {cache_err}")
 
         return {
             "message": f"Cập nhật thành công phim '{movie.title}'!",

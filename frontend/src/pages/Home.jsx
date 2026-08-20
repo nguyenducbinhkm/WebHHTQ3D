@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Banner from "./Banner";
-import Movielist from "./Movielist";
-import RankingBoard from "./RankingBoard";
-import VideoPlayer from "./VideoPlayer";
-import ScheduleSection from "./ScheduleSection";
-import Pagination from "./Pagination";
+import Banner from "../component/banner/Banner";
+import Movielist from "../component/Movielist";
+import RankingBoard from "../component/RankingBoard";
+import VideoPlayer from "../component/videoplayer/VideoPlayer";
+import ScheduleSection from "../component/ScheduleSection";
+import Pagination from "../component/Pagination";
 
 const API_URL = import.meta.env.VITE_API_URL;
 

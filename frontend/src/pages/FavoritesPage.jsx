@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Header from "./Header";
-import Movielist from "./Movielist";
+import Header from "../component/header/Header";
+import Movielist from "../component/Movielist";
 
 export default function FavoritesPage() {
   const [favoriteMovies, setFavoriteMovies] = useState([]);

@@ -1,30 +1,21 @@
 import React, { useState, useEffect } from "react";
-import {
-  Link,
-  useParams,
-  useLocation,
-  useSearchParams,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Header from "./Header";
-import Movielist from "./Movielist";
-import VideoPlayer from "./VideoPlayer";
-import CommentSection from "./CommentSection"; // <--- Đã import component CommentSection
-import {
-  FaHeart,
-  FaRegHeart,
-  FaStar,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
+import Header from "../header/Header";
+import Movielist from "../Movielist";
+import VideoPlayer from "../videoplayer/VideoPlayer";
+import CommentSection from "../comment/CommentSection";
+import EpisodeList from "./EpisodeList";
+import MovieInfoCard from "./MovieInfoCard";
+import MovieDescription from "./MovieDescription";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-// Lấy base URL từ biến môi trường của Vite
 const API_URL = import.meta.env.VITE_API_URL;
 
 function WatchPage() {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [movieData, setMovieData] = useState(null);
   const [allMovies, setAllMovies] = useState([]);
@@ -34,14 +25,11 @@ function WatchPage() {
 
   const saveHistory = async () => {
     if (!movieData) return;
-
-    const movieId = movieData.id || movieData.movie_info?.id || movieData.M_ID;
+    const movieId = movieData.id || movieData.movie_info?.id || movieData?.M_ID;
     if (!movieId) return;
 
     const token =
       localStorage.getItem("token") || localStorage.getItem("access_token");
-
-    // Lấy thông tin chuẩn để hiển thị poster và title
     const movieTitle =
       movieData.title || movieData.movie_info?.title || "Phim Hoạt Hình";
     const moviePoster =
@@ -53,7 +41,6 @@ function WatchPage() {
       "";
 
     if (token) {
-      // === 1. ĐÃ ĐĂNG NHẬP: Gửi lên Backend FastAPI ===
       try {
         await axios.post(
           "http://localhost:8000/api/watch-history/",
@@ -61,15 +48,12 @@ function WatchPage() {
             movie_id: Number(movieId),
             episode_number: Number(currentEpisode),
           },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
+          { headers: { Authorization: `Bearer ${token}` } },
         );
       } catch (err) {
         console.error("Lỗi gửi lịch sử lên server:", err);
       }
     } else {
-      // === 2. CHƯA ĐĂNG NHẬP (KHÁCH): Lưu vào localStorage đúng chuẩn cấu trúc ===
       const historyItem = {
         id: movieId,
         movie_id: Number(movieId),
@@ -83,18 +67,13 @@ function WatchPage() {
         },
       };
 
-      // Đọc đúng key "watch_history" mà trang WatchHistoryPage đang dùng
       const localData = JSON.parse(localStorage.getItem("watch_history")) || [];
-
-      // Lọc bỏ phim cũ cùng slug để đẩy phim mới xem lên đầu
       const filtered = localData.filter((item) => item.movie?.slug !== slug);
       const newHistory = [historyItem, ...filtered];
-
       localStorage.setItem("watch_history", JSON.stringify(newHistory));
     }
   };
 
-  // Đọc số tập từ URL query string (ví dụ: ?ep=5) khi component mount hoặc URL thay đổi
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const epFromUrl = searchParams.get("ep");
@@ -113,33 +92,27 @@ function WatchPage() {
 
   useEffect(() => {
     setLoading(true);
-
     const fetchDetail = axios.get(`${API_URL}/api/movies/${slug}`);
     const fetchAll = axios.get(`${API_URL}/api/movies`);
 
     Promise.all([fetchDetail, fetchAll])
       .then(([detailRes, allRes]) => {
         const movie = detailRes.data;
-        console.log("DỮ LIỆU PHIM TỪ API:", movie);
-
         setMovieData(movie);
         setAllMovies(allRes.data || []);
         setLoading(false);
 
-        // Chuẩn hóa khóa định danh duy nhất cho phim
         const currentKey =
           movie.slug ||
           movie.movie_info?.slug ||
-          movie.M_ID ||
+          movie?.M_ID ||
           movie.id ||
           slug;
-
-        // Kiểm tra xem phim đã có trong danh sách yêu thích của localStorage chưa
         const storedFavorites = JSON.parse(
           localStorage.getItem("favorite_movies") || "[]",
         );
         const isExisted = storedFavorites.some(
-          (item) => (item.slug || item.M_ID || item.id) === currentKey,
+          (item) => (item.slug || item?.M_ID || item.id) === currentKey,
         );
         setIsFavorite(isExisted);
       })
@@ -149,25 +122,20 @@ function WatchPage() {
       });
   }, [slug]);
 
-  // Hàm xử lý Thêm / Bỏ yêu thích chống trùng lặp hoàn toàn
   const handleToggleFavorite = () => {
     if (!movieData) return;
-
     const storedFavorites = JSON.parse(
       localStorage.getItem("favorite_movies") || "[]",
     );
-
-    // Khóa định danh chuẩn
     const currentKey =
       movieData.slug ||
       movieData.movie_info?.slug ||
-      movieData.M_ID ||
+      movieData?.M_ID ||
       movieData.id ||
       slug;
 
-    // Lọc bỏ toàn bộ bản ghi cũ để tránh nhân đôi
     const filteredFavorites = storedFavorites.filter(
-      (item) => (item.slug || item.M_ID || item.id) !== currentKey,
+      (item) => (item.slug || item?.M_ID || item.id) !== currentKey,
     );
 
     let updatedFavorites;
@@ -178,7 +146,7 @@ function WatchPage() {
       const movieToSave = {
         ...movieData,
         slug: currentKey,
-        M_ID: movieData.M_ID || movieData.movie_info?.M_ID || movieData.id,
+        M_ID: movieData?.M_ID || movieData?.movie_info?.M_ID || movieData.id,
         title:
           movieData?.movie_info?.title ||
           movieData?.title ||
@@ -206,16 +174,13 @@ function WatchPage() {
     localStorage.setItem("favorite_movies", JSON.stringify(updatedFavorites));
   };
 
-  // 1. Trích xuất mảng tập
   const episodes =
     movieData?.episodes ||
     movieData?.movie_info?.episodes ||
     movieData?.list_episodes ||
     [];
-
   const totalEpCount = episodes.length > 0 ? episodes.length : 1;
 
-  // 2. Lấy Object của tập đang chọn
   const currentEpObj =
     episodes.find(
       (ep) =>
@@ -228,7 +193,6 @@ function WatchPage() {
     episodes[currentEpisode - 1] ||
     episodes[0];
 
-  // 3. Ưu tiên lấy m3u8_url chuẩn từ Backend
   const videoUrl =
     currentEpObj?.m3u8_url ||
     currentEpObj?.video_url ||
@@ -241,21 +205,12 @@ function WatchPage() {
     movieData?.m3u8_url ||
     movieData?.video_url ||
     movieData?.movie_info?.video_url ||
-    formatMovieIdOrSlugVideo(); // fallback
-
-  function formatMovieIdOrSlugVideo() {
-    return "";
-  }
+    "";
 
   const movieTitle =
     movieData?.movie_info?.title || movieData?.title || "Phim Hoạt Hình";
-
-  const navigate = useNavigate();
-
-  // Lấy ID phim chuẩn để truyền vào component bình luận
   const movieId = movieData?.movie_info?.id || movieData?.id;
 
-  // 4. Lấy Thể loại từ Database
   const categories =
     movieData?.categories ||
     movieData?.movie_info?.categories ||
@@ -263,21 +218,19 @@ function WatchPage() {
     movieData?.movie_info?.genre ||
     [];
 
-  // 5. Lấy Lịch chiếu từ Database
   const releaseDayRaw =
     movieData?.release_day ||
     movieData?.movie_info?.release_day ||
     movieData?.schedule ||
     movieData?.movie_info?.schedule ||
     "Đang cập nhật";
-  // 6. Lấy Đánh giá (Rating) & Số lượt bình chọn (Vote Count) từ movie_info chính xác
+
   const rawRating =
     movieData?.movie_info?.rating ??
     movieData?.rating ??
     movieData?.movie_info?.vote_average ??
     movieData?.vote_average ??
     0;
-
   const ratingScore = Number(rawRating || 0).toFixed(1);
 
   const rawVoteCount =
@@ -286,7 +239,6 @@ function WatchPage() {
     movieData?.movie_info?.total_vote ??
     movieData?.total_vote ??
     0;
-
   const voteCountStr = Number(rawVoteCount || 0).toLocaleString();
 
   const formatReleaseDay = (day) => {
@@ -303,6 +255,11 @@ function WatchPage() {
     return mapDays[day.toLowerCase()] || day;
   };
 
+  const handleSelectEpisode = (ep) => {
+    setCurrentEpisode(ep);
+    navigate(`?ep=${ep}`, { replace: true });
+  };
+
   if (loading) {
     return (
       <div className="bg-[#121315] min-h-screen text-white flex items-center justify-center">
@@ -310,35 +267,6 @@ function WatchPage() {
       </div>
     );
   }
-
-  // Component giao diện chung cho phần Danh sách tập
-  const renderEpisodeList = () => (
-    <div className="w-full bg-[#18191c] p-3 rounded border border-gray-800 shrink-0">
-      <h3 className="text-xs font-bold text-gray-400 mb-2 px-1 uppercase tracking-wider">
-        Danh sách tập ({totalEpCount})
-      </h3>
-      <div className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-5 gap-1.5 max-h-[520px] overflow-y-auto pr-1">
-        {Array.from({ length: totalEpCount }, (_, i) => totalEpCount - i).map(
-          (ep) => (
-            <button
-              key={ep}
-              onClick={() => {
-                setCurrentEpisode(ep);
-                navigate(`?ep=${ep}`, { replace: true }); // Cập nhật ngay lập tức URL thành ?ep=2 mà không làm reload trang
-              }}
-              className={`py-2 text-xs rounded font-medium transition ${
-                currentEpisode === ep
-                  ? "bg-[#38bdf8] text-black font-bold"
-                  : "bg-[#25272c] text-gray-300 hover:bg-gray-700"
-              }`}
-            >
-              Tập {ep}
-            </button>
-          ),
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="bg-[#121315] min-h-screen text-white">
@@ -358,10 +286,16 @@ function WatchPage() {
           </span>
         </div>
 
-        {/* Nội dung responsive: Desktop hiện 2 cột, Mobile hiện 1 cột */}
+        {/* Nội dung responsive */}
         <div className="flex flex-col md:flex-row gap-4 items-start mb-10">
           {/* CỘT TRÁI: Danh sách tập */}
-          <div className="hidden md:block w-72">{renderEpisodeList()}</div>
+          <div className="hidden md:block w-72">
+            <EpisodeList
+              totalEpCount={totalEpCount}
+              currentEpisode={currentEpisode}
+              onSelectEpisode={handleSelectEpisode}
+            />
+          </div>
 
           {/* CỘT PHẢI: Video Player & Thông tin chi tiết */}
           <div className="flex-1 w-full flex flex-col space-y-4">
@@ -411,89 +345,36 @@ function WatchPage() {
             </div>
 
             {/* DANH SÁCH TẬP PHIM (MOBILE) */}
-            <div className="block md:hidden w-full">{renderEpisodeList()}</div>
-
-            {/* Thông tin phim */}
-            <div className="p-5 bg-[#18191c] border border-gray-800 rounded space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-sky-400">
-                    {movieTitle} - Tập {currentEpisode}
-                  </h1>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Hoạt hình Trung Quốc
-                  </p>
-                </div>
-
-                {/* Đánh giá sao (Lấy dữ liệu động từ cột rating & vote_count của Database) */}
-                <div className="flex items-center gap-2 bg-[#222] px-3 py-1.5 rounded-lg border border-gray-700">
-                  <div className="flex text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar key={i} className="text-sm" />
-                    ))}
-                  </div>
-                  <span className="text-sm font-bold text-gray-200">
-                    {ratingScore}/5{" "}
-                    <span className="text-xs text-gray-400 font-normal">
-                      ({voteCountStr} bình chọn)
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Lịch chiếu */}
-              <p className="text-sm text-gray-300">
-                <strong className="text-gray-100">Lịch chiếu:</strong>{" "}
-                {formatReleaseDay(releaseDayRaw)}
-              </p>
-
-              {/* Nút Yêu thích */}
-              <button
-                onClick={handleToggleFavorite}
-                className={`w-full py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition ${
-                  isFavorite
-                    ? "bg-[#b91c1c] hover:bg-red-700 text-white"
-                    : "bg-gray-800 hover:bg-gray-700 text-gray-200"
-                }`}
-              >
-                {isFavorite ? <FaHeart /> : <FaRegHeart />}
-                {isFavorite ? "Bỏ yêu thích" : "Thêm yêu thích"}
-              </button>
-
-              {/* Thể loại */}
-              <div className="flex items-center gap-2 flex-wrap pt-1">
-                <span className="text-sm text-gray-400">Thể loại:</span>
-                {categories.length > 0 ? (
-                  categories.map((cat, index) => (
-                    <span
-                      key={cat.id || index}
-                      className="px-3 py-1 bg-[#262626] border border-gray-700 text-xs rounded-full text-gray-300"
-                    >
-                      {typeof cat === "string" ? cat : cat.name || cat.title}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-gray-500">
-                    Đang cập nhật thể loại
-                  </span>
-                )}
-              </div>
+            <div className="block md:hidden w-full">
+              <EpisodeList
+                totalEpCount={totalEpCount}
+                currentEpisode={currentEpisode}
+                onSelectEpisode={handleSelectEpisode}
+              />
             </div>
 
-            {/* ==================== TÍCH HỢP COMPONENT BÌNH LUẬN ==================== */}
+            {/* Thông tin phim */}
+            <MovieInfoCard
+              movieTitle={movieTitle}
+              currentEpisode={currentEpisode}
+              ratingScore={ratingScore}
+              voteCountStr={voteCountStr}
+              releaseDayRaw={releaseDayRaw}
+              formatReleaseDay={formatReleaseDay}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
+              categories={categories}
+            />
+
+            {/* TÍCH HỢP COMPONENT BÌNH LUẬN */}
             {movieId && <CommentSection movieId={movieId} />}
 
             {/* Mô tả phim */}
-            <div className="p-4 bg-[#18191c] border border-gray-800 rounded">
-              <h3 className="text-sm font-bold text-gray-200 mb-2">
-                Nội dung phim
-              </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                {movieData?.movie_info?.description ||
-                  movieData?.description ||
-                  "Chưa có mô tả nội dung."}
-              </p>
-            </div>
+            <MovieDescription
+              description={
+                movieData?.movie_info?.description || movieData?.description
+              }
+            />
           </div>
         </div>
 

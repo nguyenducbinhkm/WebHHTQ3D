@@ -27,12 +27,12 @@ def get_ranking_movies(db: Session = Depends(get_db)):
 
 @router.get("/status/completed")
 def get_completed_movies(db: Session = Depends(get_db)):
-    cache_key = "movies:completed"
+    cache_key = "movies:completed_v2"  # <-- Đổi thành v2 ở đây để clear cache cũ
     try:
         cached_data = redis_client.get(cache_key)
         if cached_data:
             return json.loads(cached_data)
-
+        
         result = crud_movies.get_completed_movies_db(db)
         redis_client.setex(cache_key, CACHE_EXPIRE, json.dumps(result, default=str))
         return result
@@ -43,12 +43,12 @@ def get_completed_movies(db: Session = Depends(get_db)):
 
 @router.get("/top-hot")
 def get_top_hot_movies(db: Session = Depends(get_db)):
-    cache_key = "movies:top_hot"
+    cache_key = "movies:top_hot_v3"  
     try:
         cached_data = redis_client.get(cache_key)
         if cached_data:
             return json.loads(cached_data)
-
+        
         result = crud_movies.get_top_hot_movies_db(db)
         redis_client.setex(cache_key, CACHE_EXPIRE, json.dumps(result, default=str))
         return result

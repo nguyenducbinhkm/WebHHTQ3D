@@ -13,21 +13,24 @@ def get_ranking_movies_db(db: Session):
 
 def get_completed_movies_db(db: Session):
     query = text("""
-        SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.status, m.views_count
+        SELECT m.id AS id, m.title AS title, m.slug AS slug, m.poster_url AS poster_url, m.backdrop_url AS backdrop_url, m.status AS status
         FROM movies m
         WHERE m.status = 'completed'
         ORDER BY m.views_count DESC
     """)
-    return db.execute(query).mappings().all()
+    result = db.execute(query).mappings().all()
+    return [dict(row) for row in result]
 
 def get_top_hot_movies_db(db: Session):
     query = text("""
-        SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.views_count
+        SELECT m.id, m.title, m.slug, m.poster_url, m.backdrop_url, m.status, m.views_count
         FROM movies m
         ORDER BY m.views_count DESC
-        LIMIT 10
+        LIMIT 12
     """)
-    return db.execute(query).mappings().all()
+    result = db.execute(query).mappings().all()
+    # Ép từng RowMapping thành dict chuẩn
+    return [dict(row) for row in result]
 
 def get_movies_by_schedule_db(db: Session, day: str):
     query = text("""

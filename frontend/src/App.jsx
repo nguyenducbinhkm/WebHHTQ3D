@@ -1,14 +1,14 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import MainLayout from "./component/MainLayout"; // Import layout chung
-import Home from "./component/Home";
-import CategoryPage from "./component/CategoryPage";
-import SearchPage from "./component/SearchPage";
-import WatchPage from "./component/WatchPage";
-import FavoritesPage from "./component/FavoritesPage";
-import WatchHistoryPage from "./component/WatchHistoryPage";
-import CompletedMoviesPage from "./component/CompletedMoviesPage"; // <--- 1. IMPORT TRANG PHIM ĐÃ HOÀN THÀNH
-import AdminMoviesPage from "./component/AdminMoviesPage";
+import Home from "./pages/Home";
+import CategoryPage from "./pages/CategoryPage";
+import SearchPage from "./pages/SearchPage";
+import WatchPage from "./component/watchpage/WatchPage";
+import FavoritesPage from "./pages/FavoritesPage";
+import WatchHistoryPage from "./pages/WatchHistoryPage";
+import CompletedMoviesPage from "./pages/CompletedMoviesPage"; // <--- 1. IMPORT TRANG PHIM ĐÃ HOÀN THÀNH
+import AdminMoviesPage from "./pages/admin_movies_page/AdminMoviesPage";
 
 // Component tự động đưa màn hình về vị trí (0, 0) ngay lập tức khi đổi đường dẫn hoặc tham số (?ep=...)
 function ScrollToTop() {
